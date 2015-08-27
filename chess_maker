@@ -1,0 +1,14 @@
+all: chessprog
+
+clean:
+	-rm main.o chessprog
+
+chessprog: console.o main.o
+	gcc  -o chessprog console.o main.o -lm -std=c99 -pedantic-errors -g `sdl-config --libs`
+
+	
+main.o: console.c main.c 
+	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm main.c `sdl-config --cflags`
+
+console.o: console.c
+	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm console.c `sdl-config --cflags`

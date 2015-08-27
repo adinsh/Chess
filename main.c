@@ -3,89 +3,29 @@
 #include <stdlib.h>
 #include "Chess.h"
 
-//						 *************** Board init & print methods ****************
 
-void print_line(){
-	int i;
-	printf("  |");
-	for (i = 1; i < BOARD_SIZE*4; i++){
-		printf("-");
-	}
-	printf("|\n");
-}
+// Genral settings
+int DEBUG = 0;
+int MINIMAX_DEPTH = 1;
+int GAME = 0;
+int SETTINGS = 1;
+int GUI_MODE = 0; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
+int TWO_PLAYERS_MODE = 1; // '1' - two players mode, '2' - player vs. AI mode
+int WHITE_TURN = 1; // 0 - black, 1- white
+int PLAYER_WHITE = 1; //???
+char board[BOARD_SIZE][BOARD_SIZE]; // the Board 
 
-void print_board(char board[BOARD_SIZE][BOARD_SIZE]) {
-	int column,row;
-	print_line();
-	for (row = BOARD_SIZE-1; row >= 0 ; row--)
-	{
-		printf((row < 9 ? " %d" : "%d"), row+1);
-		for (column = 0; column < BOARD_SIZE; column++){
-			printf("| %c ", board[column][row]);
-		}
-		printf("|\n");
-		print_line();
-	}
-	printf("   ");
-	for (column = 0; column < BOARD_SIZE; column++){
-		printf(" %c  ", (char)('a' + column));
-	}
-	printf("\n");
-}
+// Game setiings
+int WHITE_CR_ENABLE = 1; // ??? what to do in case the game is loaded?
+int BLACK_CR_ENABLE = 1;
+int WHITE_CL_ENABLE = 1;
+int BLACK_CL_ENABLE = 1;
+
+int CHECK_ON_WHITE = 0;
+int CHECK_ON_BLACK = 0;
 
 
-void init_board(char board[BOARD_SIZE][BOARD_SIZE])
-{
-	int column,row;
-	char tmp;
-	int transform; // delta from 'white' to 'black'
-	for (row = 0; row < BOARD_SIZE; row++)
-	{
-		for (column = 0; column < BOARD_SIZE; column++)
-		{
-            tmp = EMPTY;
-            transform = 'a'-'A';
-			if ( row == 0 || row == 7)
-			{
-				if ( row == 0 ) transform = 0; // don't transform to black
-				switch( column )
-				{
-					case 0:
-						tmp = WHITE_R - transform;
-						break;
-					case 1:
-						tmp = WHITE_N - transform;
-						break;
-					case 2:
-						tmp = WHITE_B - transform;
-						break;
-					case 3:
-						tmp = WHITE_Q - transform;
-						break;
-					case 4:
-						tmp = WHITE_K - transform;
-						break;
-					case 5:
-						tmp = WHITE_B - transform;
-						break;
-					case 6:
-						tmp = WHITE_N - transform;
-						break;
-					case 7:
-						tmp = WHITE_R - transform;
-						break;
-				}
-			}
-			if ( row == 1 || row == 6 ) // pawns rows
-			{
-				if ( row == 1 ) transform = 0;
-				tmp = WHITE_P - transform;
-			}
 
-			board[column][row] = tmp;
-		}
-	}
-}
 
 void test1()
 {
@@ -99,12 +39,32 @@ void test1()
 /** the main function. */
 int main( int argc, char** argv )
 {
-	int gui_mode = 0; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
-
+	char input[BUFF_SIZE] = "\n"; ///??? right initializion? 
+	init_board(board);
+	print_board(board);
 	if ( argc == 2 ) // more than 1 argument
 	{
-		if ( strcmp(argv[1], "gui") == 0 ) gui_mode = 1;
+		if ( strcmp(argv[1], "gui") == 0 ) GUI_MODE = 1;
 	}
-	if ( !gui_mode ) test1();
+
+	while(1)
+	{
+		if ( 1  || (SETTINGS) ) // ??? change condtions LLLLATERR
+		{
+			//if (GAME) print_message(ENTER_YOUR_MOVE);
+			print_message(ENTER_SETTINGS);
+			read_input(input);
+			if( strcmp(input,"\n") == 0 ) continue; // verify input isn't empty.
+			if ( strcmp(input, "quit") == 0 ) quit();
+		}
+		if ( SETTINGS ) parse_input_settings(input);
+		if ( DEBUG )
+		{
+			printf("user color is: %d\n", PLAYER_WHITE);
+			printf("minmax depth is: %d\n", MINIMAX_DEPTH);
+			printf("next player is: %d\n", WHITE_TURN);
+			printf("game mode is: %d\n", TWO_PLAYERS_MODE);		
+		}
+	}
 	return 0;
 }
