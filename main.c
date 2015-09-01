@@ -51,8 +51,8 @@ int main( int argc, char** argv )
 	{
 		if ( 1  || (SETTINGS) ) // ??? change condtions LLLLATERR
 		{
-			//if (GAME) print_message(ENTER_YOUR_MOVE);
-			print_message(ENTER_SETTINGS);
+			if ( GAME ) print_message("bla!\n");//???
+			if ( SETTINGS ) print_message(ENTER_SETTINGS);
 			read_input(input);
 			if( strcmp(input,"\n") == 0 ) continue; // verify input isn't empty.
 			if ( strcmp(input, "quit") == 0 ) quit();
@@ -64,6 +64,10 @@ int main( int argc, char** argv )
 			printf("minmax depth is: %d\n", MINIMAX_DEPTH);
 			printf("next player is: %d\n", WHITE_TURN);
 			printf("game mode is: %d\n", TWO_PLAYERS_MODE);		
+		}
+		if ( GAME )
+		{
+			quit(); //???
 		}
 	}
 	return 0;

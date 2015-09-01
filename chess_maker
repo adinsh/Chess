@@ -3,12 +3,15 @@ all: chessprog
 clean:
 	-rm main.o chessprog
 
-chessprog: console.o main.o
-	gcc  -o chessprog console.o main.o -lm -std=c99 -pedantic-errors -g `sdl-config --libs`
+chessprog: xml_parser.o console.o main.o
+	gcc  -o chessprog xml_parser.o console.o main.o -lm -std=c99 -pedantic-errors -g `sdl-config --libs`
 
 	
-main.o: console.c main.c 
+main.o: xml_parser.c console.c main.c 
 	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm main.c `sdl-config --cflags`
 
 console.o: console.c
 	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm console.c `sdl-config --cflags`
+
+xml_parser.o: xml_parser.c
+	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm xml_parser.c `sdl-config --cflags`

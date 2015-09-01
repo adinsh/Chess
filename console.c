@@ -53,20 +53,23 @@ void print_line(){
 	printf("|\n");
 }
 
-void print_board( char board[BOARD_SIZE][BOARD_SIZE] ) {
+void print_board( char board[BOARD_SIZE][BOARD_SIZE] )
+{
 	int column,row;
 	print_line();
 	for (row = BOARD_SIZE-1; row >= 0 ; row--)
 	{
 		printf((row < 9 ? " %d" : "%d"), row+1);
-		for ( column = 0; column < BOARD_SIZE; column++ ){
+		for ( column = 0; column < BOARD_SIZE; column++ )
+		{
 			printf("| %c ", board[column][row]);
 		}
 		printf("|\n");
 		print_line();
 	}
 	printf("   ");
-	for ( column = 0; column < BOARD_SIZE; column++ ){
+	for ( column = 0; column < BOARD_SIZE; column++ )
+	{
 		printf(" %c  ", (char)('a' + column));
 	}
 	printf("\n");
@@ -298,12 +301,17 @@ void parse_input_settings( char input[BUFF_SIZE] )
 		if ( strcmp(word, "black") == 0 ) WHITE_TURN = 0;
 		if ( strcmp(word, "white") == 0 ) WHITE_TURN = 1;
 	}
-	else if ( strcmp(word, "print") == 0) print_board(board);	
-	else if ( strcmp(word, "start") == 0)
+	else if ( strcmp(word, "print") == 0) print_board(board);
+	else if ( strcmp(word, "load") == 0)
+	{
+		if ( load_xml(strtok(NULL, " ")) ) print_message(WRONG_FILE_NAME)
+		else print_board(board);
+	}
+	else if ( strcmp(word, "start") == 0 )
 	{
 		if ( check_settings() ) // if the game is a "game over" game we need to decide wtftd ??? 
 		{
-			//start_game();//???
+			start_game();
 		}
 		else print_message(WROND_BOARD_INITIALIZATION);
 	}
@@ -352,6 +360,12 @@ void clear(void)
 		board[i][j] = EMPTY;
 	}
   }
+}
+
+void start_game(void)
+{
+	SETTINGS = 0;
+	GAME = 1;
 }
 
 // sets EMPTY to location 'l'

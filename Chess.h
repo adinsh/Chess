@@ -73,4 +73,11 @@ void parse_input_settings( char input[BUFF_SIZE] );
 char to_piece( char *word );
 int is_legal_placement( location l, char piece );
 int is_legal_location( location l );
+void start_game(void);
+
+// XML functions
+int load_xml(char *file_pth);
+int parse_line(char *line, int cnt);
+void load_row(char *row_str, int row_num);
+
 #endif
