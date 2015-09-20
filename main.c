@@ -5,10 +5,10 @@
 
 
 // Genral settings
-int DEBUG = 0;
 int MINIMAX_DEPTH = 1;
 int GAME = 0;
 int SETTINGS = 1;
+int GAME_STATUS = 0; // '0' - ongoing game, '1' - tie, '2' someone wins.
 int GUI_MODE = 0; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
 int TWO_PLAYERS_MODE = 1; // '1' - two players mode, '2' - player vs. AI mode
 int WHITE_TURN = 1; // 0 - black, 1- white
@@ -39,7 +39,8 @@ void test1()
 /** the main function. */
 int main( int argc, char** argv )
 {
-	char input[BUFF_SIZE] = "\n"; ///??? right initializion? 
+	int repeat = 0;
+	char input[BUFF_SIZE] = "\n"; ///??? right initialization? 
 	init_board(board);
 	print_board(board);
 	if ( argc == 2 ) // more than 1 argument
@@ -49,9 +50,9 @@ int main( int argc, char** argv )
 
 	while(1)
 	{
-		if ( 1  || (SETTINGS) ) // ??? change condtions LLLLATERR
+		if ( (SETTINGS) || (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) )  // ??? change conditions LLLLATERR
 		{
-			if ( GAME ) print_message("bla!\n");//???
+			if ( GAME )	print_message(ENTER_MOVE(WHITE_TURN)); //???
 			if ( SETTINGS ) print_message(ENTER_SETTINGS);
 			read_input(input);
 			if( strcmp(input,"\n") == 0 ) continue; // verify input isn't empty.
@@ -67,8 +68,23 @@ int main( int argc, char** argv )
 		}
 		if ( GAME )
 		{
-			quit(); //???
+			if ( (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) ) //user's turn 
+			{
+				if( (repeat = parse_input_game(input)) == 1 ) //'1' if user's input was wrong in some way or need another input 
+					WHITE_TURN = (WHITE_TURN + 1)%2; 
+			}
+			else play_computer_turn(); //computer's turn 
+
+			WHITE_TURN = (WHITE_TURN + 1)%2;
+			if( !repeat ) print_board(board);
+			if ( (GAME_STATUS = game_over()) ) GAME = 0; // ??? 
+			if( !GAME && !SETTINGS ) // end the game
+			{  
+				declare_winner();
+				quit();
+			}
 		}
+		
 	}
 	return 0;
 }

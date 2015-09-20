@@ -28,6 +28,9 @@
 
 #define BUFF_SIZE 52
 
+#define DEBUG 0
+#define DO_DEBUG(x) (DEBUG == 1) ? (x) : NULL
+#define PRINTD(x) (DEBUG == 1) ? printf("%s\n", x) : NULL
 // board initialization
 #define ENTER_SETTINGS "Enter game settings:\n" 
 #define WRONG_GAME_MODE "Wrong game mode\n"
@@ -39,6 +42,7 @@
 #define NO_PIECE "Setting this piece creates an invalid board\n"  
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
 
+#define ENTER_MOVE(x) (((x) == 1) ? "white player - enter your move:\n" : "black player - enter your move:\n")
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
 #define ILLEGAL_MOVE "Illegal move\n"
  

@@ -153,7 +153,66 @@ void load_row(char *row_str, int row_num)
 	}
 }
 
+int  save_xml(const char *file_name)
+{
+	FILE *f_out;
+	if ( (f_out = fopen(file_name, "w")) == NULL ) return 1;
+
+	char *next_turn = WHITE_TURN == 1 ? "White" : "Black";
+	char *game_mode = TWO_PLAYERS_MODE == 1 ? "1" : "2";
+	char min_depth[] = {MINIMAX_DEPTH + '0', '\0'}; //MINIMAX_DEPTH to string
+	char *difficulty = MINIMAX_DEPTH == -1 ? "best" : min_depth;
+	char *user_color = PLAYER_WHITE == 1 ? "White" : "Black";
+	if ( TWO_PLAYERS_MODE == 1 )
+	{
+		user_color = "";
+		difficulty = "";
+	}
+	fputs("<?xml version="1.0" encoding="UTF-8"?>\n", f_out);
+	fputs("<game>\n", f_out);
+	fputs("\t<next_turn>", f_out);
+	fputs(next_turn, f_out); 
+	fputs("</next_turn>\n", f_out);
+	fputs("\t<game_mode>", f_out);
+	fputs(game_mode, f_out); 
+	fputs("</game_mode>\n", f_out);
+	fputs("\t<difficulty>", f_out);
+	fputs(difficulty, f_out); 
+	fputs("</difficulty>\n", f_out);
+	fputs("\t<user_color>", f_out);
+	fputs(user_color, f_out); 
+	fputs("</user_color>\n", f_out);
+	fputs("\t<board>", f_out);
+	fputs("\t\t<row_8>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	///....
+	fputs("\t</board>", f_out);
+	
+/* 	fputs("\t<general>", f_out); // in case we need another markup....
+	fputs(general, f_out); 
+	fputs("</general>\n", f_out);
+ */
+	
+	fputs("</game>", f_out);
+	fclose(f_out);
+	return 0;
+}
 
 
 
-		
+		<?xml version="1.0" encoding="UTF-8"?>
+<game>
+	<next_turn>White</next_turn>
+	<game_mode>1</game_mode>
+	<difficulty></difficulty>
+	<user_color></user_color>
+	<board>
+		<row_8>________</row_8>
+		<row_7>Mq_r___M</row_7>
+		<row_6>____RMM_</row_6>
+		<row_5>__KM_M__</row_5>
+		<row_4>________</row_4>
+		<row_3>__m_B__m</row_3>
+		<row_2>__m__Qm_</row_2>
+		<row_1>___kr___</row_1>
+	</board>
+</game>

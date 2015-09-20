@@ -391,6 +391,24 @@ void set_location( location l, int white, char piece )
 }
 
 
+// GAME //
 
+/** returns 'l' if current player is still playing (the turn hasn't passed).
+  * else returns'0' (turn will pass to the next player).  
+  * ????. */
+int parse_input_settings( char input[BUFF_SIZE] )
+{
+	char words[BUFF_SIZE]; // will be a copy of the input.
+	char *word;
+	strcpy(words, input); 
+	word = strtok(words, " ");
+	
+	// check if 'word' matches a legal (settings) command: 
+	if ( strcmp(word, "save") == 0 && !TWO_PLAYERS_MODE )
+	{
+		if ( save_xml(strtok(NULL, " ")) ) print_message(WRONG_FILE_NAME);
+		return 1; // repeat
+	}
+}
 
   
