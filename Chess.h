@@ -28,8 +28,8 @@
 
 #define BUFF_SIZE 52
 
-#define DEBUG 0
-#define DO_DEBUG(x) (DEBUG == 1) ? (x) : NULL
+#define DEBUG 1
+#define DO_DEBUG(x,y) (DEBUG == 1) ? (x) : (y)
 #define PRINTD(x) (DEBUG == 1) ? printf("%s\n", x) : NULL
 // board initialization
 #define ENTER_SETTINGS "Enter game settings:\n" 
@@ -78,10 +78,20 @@ char to_piece( char *word );
 int is_legal_placement( location l, char piece );
 int is_legal_location( location l );
 void start_game(void);
+int parse_input_game( char input[BUFF_SIZE] );
+void play_computer_turn(void);
+int game_over(void);
+void declare_winner(void);
 
 // XML functions
 int load_xml(char *file_pth);
 int parse_line(char *line, int cnt);
 void load_row(char *row_str, int row_num);
+int  save_xml(const char *file_name);
+char *str_row(char row_buff[9], int row);
+
+
+//GUI functions
+int play_gui(void);
 
 #endif

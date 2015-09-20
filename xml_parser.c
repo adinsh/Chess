@@ -163,12 +163,13 @@ int  save_xml(const char *file_name)
 	char min_depth[] = {MINIMAX_DEPTH + '0', '\0'}; //MINIMAX_DEPTH to string
 	char *difficulty = MINIMAX_DEPTH == -1 ? "best" : min_depth;
 	char *user_color = PLAYER_WHITE == 1 ? "White" : "Black";
+	char row_buff[9];
 	if ( TWO_PLAYERS_MODE == 1 )
 	{
 		user_color = "";
 		difficulty = "";
 	}
-	fputs("<?xml version="1.0" encoding="UTF-8"?>\n", f_out);
+	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", f_out);
 	fputs("<game>\n", f_out);
 	fputs("\t<next_turn>", f_out);
 	fputs(next_turn, f_out); 
@@ -182,10 +183,32 @@ int  save_xml(const char *file_name)
 	fputs("\t<user_color>", f_out);
 	fputs(user_color, f_out); 
 	fputs("</user_color>\n", f_out);
-	fputs("\t<board>", f_out);
+	fputs("\t<board>\n", f_out);
 	fputs("\t\t<row_8>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
-	///....
-	fputs("\t</board>", f_out);
+	fputs(str_row(row_buff, 7), f_out);
+	fputs("</row_8>\n", f_out);
+	fputs("\t\t<row_7>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 6), f_out);
+	fputs("</row_7>\n", f_out);
+	fputs("\t\t<row_6>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 5), f_out);
+	fputs("</row_6>\n", f_out);
+	fputs("\t\t<row_5>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 4), f_out);
+	fputs("</row_5>\n", f_out);
+	fputs("\t\t<row_4>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 3), f_out);
+	fputs("</row_4>\n", f_out);
+	fputs("\t\t<row_3>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 2), f_out);
+	fputs("</row_3>\n", f_out);
+	fputs("\t\t<row_2>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 1), f_out);
+	fputs("</row_2>\n", f_out);
+	fputs("\t\t<row_1>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs(str_row(row_buff, 0), f_out);
+	fputs("</row_1>\n", f_out);
+	fputs("\t</board>\n", f_out);
 	
 /* 	fputs("\t<general>", f_out); // in case we need another markup....
 	fputs(general, f_out); 
@@ -197,7 +220,17 @@ int  save_xml(const char *file_name)
 	return 0;
 }
 
+char *str_row(char row_buff[9], int row)
+{
+	for ( int column = 0; column < BOARD_SIZE; column++ )
+	{
+		row_buff[column] = board[column][row] == EMPTY ? '_' : board[column][row]; 
+	}
+	row_buff[8] = '\0';
+	return row_buff;
+}
 
+/* 
 
 		<?xml version="1.0" encoding="UTF-8"?>
 <game>
@@ -216,3 +249,4 @@ int  save_xml(const char *file_name)
 		<row_1>___kr___</row_1>
 	</board>
 </game>
+ */

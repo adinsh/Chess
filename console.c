@@ -396,7 +396,7 @@ void set_location( location l, int white, char piece )
 /** returns 'l' if current player is still playing (the turn hasn't passed).
   * else returns'0' (turn will pass to the next player).  
   * ????. */
-int parse_input_settings( char input[BUFF_SIZE] )
+int parse_input_game( char input[BUFF_SIZE] )
 {
 	char words[BUFF_SIZE]; // will be a copy of the input.
 	char *word;
@@ -404,11 +404,25 @@ int parse_input_settings( char input[BUFF_SIZE] )
 	word = strtok(words, " ");
 	
 	// check if 'word' matches a legal (settings) command: 
-	if ( strcmp(word, "save") == 0 && !TWO_PLAYERS_MODE )
+	if ( strcmp(word, "save") == 0 ) // && !TWO_PLAYERS_MODE )
 	{
 		if ( save_xml(strtok(NULL, " ")) ) print_message(WRONG_FILE_NAME);
 		return 1; // repeat
 	}
+	return 0; // change???
 }
 
-  
+int game_over(void)
+{
+	return 1;
+}
+
+void declare_winner(void)
+{
+	print_message("Yeah! You've won!!!\n")
+}
+
+void play_computer_turn(void)
+{
+	
+}  

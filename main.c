@@ -42,31 +42,31 @@ int main( int argc, char** argv )
 	int repeat = 0;
 	char input[BUFF_SIZE] = "\n"; ///??? right initialization? 
 	init_board(board);
-	print_board(board);
 	if ( argc == 2 ) // more than 1 argument
 	{
 		if ( strcmp(argv[1], "gui") == 0 ) GUI_MODE = 1;
 	}
+	if ( !GUI_MODE ) print_board(board); //prints only if in console mode
 
-	while(1)
+	while( !GUI_MODE ) //play console mode
 	{
 		if ( (SETTINGS) || (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) )  // ??? change conditions LLLLATERR
 		{
 			if ( GAME )	print_message(ENTER_MOVE(WHITE_TURN)); //???
 			if ( SETTINGS ) print_message(ENTER_SETTINGS);
 			read_input(input);
-			if( strcmp(input,"\n") == 0 ) continue; // verify input isn't empty.
+			if( strcmp(input,"") == 0 ) continue; // verify input isn't empty.
 			if ( strcmp(input, "quit") == 0 ) quit();
 		}
-		if ( SETTINGS ) parse_input_settings(input);
-		if ( DEBUG )
+		if ( SETTINGS )
 		{
-			printf("user color is: %d\n", PLAYER_WHITE);
-			printf("minmax depth is: %d\n", MINIMAX_DEPTH);
-			printf("next player is: %d\n", WHITE_TURN);
-			printf("game mode is: %d\n", TWO_PLAYERS_MODE);		
+			parse_input_settings(input);
+			DO_DEBUG(printf("user color is: %d\n", PLAYER_WHITE), 0);
+			DO_DEBUG(printf("minmax depth is: %d\n", MINIMAX_DEPTH), 0);
+			DO_DEBUG(printf("next player is: %d\n", WHITE_TURN), 0);
+			DO_DEBUG(printf("game mode is: %d\n", TWO_PLAYERS_MODE), 0);		
 		}
-		if ( GAME )
+		else if ( GAME )
 		{
 			if ( (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) ) //user's turn 
 			{
@@ -86,5 +86,6 @@ int main( int argc, char** argv )
 		}
 		
 	}
+	play_gui();
 	return 0;
 }
