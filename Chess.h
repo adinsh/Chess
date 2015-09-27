@@ -2,6 +2,8 @@
 #define CHESS_
 
 #include<stdio.h>
+#include <SDL.h>
+#include <SDL_video.h>
 
 #define WHITE_P 'm'
 #define WHITE_B 'b'
@@ -59,6 +61,8 @@ struct location_st;
 typedef struct location_st location;
 struct move_st;
 typedef struct move_st move;
+struct widget_st;
+typedef struct widget_st widget;
  
 // console functions
 void print_board( char board[BOARD_SIZE][BOARD_SIZE] );
@@ -93,5 +97,12 @@ char *str_row(char row_buff[9], int row);
 
 //GUI functions
 int play_gui(void);
+void quit_allocation_error(void);
+SDL_Surface *load_image( char *filename );
+widget *build_window(void);
+widget *build_panel(int x, int y, int size_w, int size_h, char *filename); 
+void apply_surface( int x, int y, SDL_Surface *source, SDL_Surface *destination );
+int init(void);
+
 
 #endif
