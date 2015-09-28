@@ -52,6 +52,11 @@ widget *build_panel(int x, int y, int size_w, int size_h, char *filename)
 	panel->brother = NULL;
 	SDL_Rect recta = {x, y, size_w, size_h};
 	panel->rct = recta;
+	if ( panel->sr == NULL )
+	{	
+		printf("ERROR: failed to load image: %s\n", SDL_GetError());
+		return 1;
+	}
 	return panel;	
 }
 
@@ -112,41 +117,26 @@ int init(void)
     {
         return 1;    
     }
-	printf("%s\n", "init everybody");
-	fflush(stdout);
     window = build_window();
     //Set up the screen
-	printf("%s\n", "build every body");
-	fflush(stdout);
     //If there was an error in setting up the screen
-    if( window == NULL )
+    if( window->sr == NULL )
     {
-        return 1;    
+		printf("ERROR: failed to init main window: %s\n", SDL_GetError());
+		return 1;    
     }
-	printf("%s\n", "NULL????????");
-	fflush(stdout);
     //Set the window caption
     SDL_WM_SetCaption( "Chess Prog", NULL );
-  	printf("%s\n", "NULL????????");
-	fflush(stdout);  
     //If everything initialized fine
     return 0;
 }
 
 
 int play_gui(void) {
-	printf("%s\n", "hello everybody0");
-	fflush(stdout);	
 	if ( init() ) return 1;
-	printf("%s\n", "init!!!!!!");
-	fflush(stdout);
 	SDL_Event event;
 	background = build_panel(0, 0, WIN_W, WIN_H, "background.bmp");
 	window->child = background; 
-	// 	SDL_Rect quit_button = {225, 400, 50, 50};
-//	SDL_Rect imgrect = {0, 0, IMG_W, IMG_H};
- //*/	
-//	SDL_Surface *background = SDL_DisplayFormat(SDL_LoadBMP("background.bmp"));
 	SDL_WM_SetCaption("Chess Prog", NULL);
 	int quit = 0;
 	
@@ -154,76 +144,23 @@ int play_gui(void) {
 	apply_surface(current->child->rct.x, current->child->rct.y, current->child->sr, current->sr);
 	
 	/* Initialize SDL and make sure it quits*/
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+/* 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("ERROR: unable to init SDL: %s\n", SDL_GetError());
 		return 1;
 	}
 	atexit(SDL_Quit);
+ */	
 
-	/* Create window surface*/
-
-	if (window == NULL) {
-		printf("ERROR: failed to set video mode: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	/* Define the rects we need*/
-	
-
-	/* Load test spritesheet image*/
-	
-	if (background == NULL) {
-		printf("ERROR: failed to load image: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	/* Set colorkey to BLUE*/
-/* 	if (SDL_SetColorKey(img, SDL_SRCCOLORKEY, SDL_MapRGB(img->format, 0, 0, 255)) != 0) {
-		printf("ERROR: failed to set color key: %s\n", SDL_GetError());
-		SDL_FreeSurface(img);
-		return 1;
-	}
- */
 
 	while (!quit) {
-		printf("%s\n", "hello everybody");
-		fflush(stdout);
-		/* Clear window to BLACK*/
-/* 		if (SDL_FillRect(window,0,0) != 0) {
-			printf("ERROR: failed to draw rect: %s\n", SDL_GetError());
-			break;
-		}
- */
-		/* Green rectangle button*/
-/* 		if (SDL_FillRect(w, &rect, SDL_MapRGB(w->format, 0, 255, 0)) != 0) {
-			printf("ERROR: failed to draw rect: %s\n", SDL_GetError());
-			break;
-		}
- */
-		/* Draw image sprite*/
-/* 		if (SDL_BlitSurface(background, NULL, window, 0) != 0) {
-			SDL_FreeSurface(background);
-			printf("ERROR: failed to blit image: %s\n", SDL_GetError());
-			break;
-		}
- */
-		/* Advance to next sprite*/
-/* 		imgrect.x += imgrect.w;
-		if (imgrect.x >= img->w) {
-			imgrect.x = 0;
-			imgrect.y += imgrect.h;
-			if (imgrect.y >= img->h) imgrect.y = 0;
-		}
- */
+
 		/* We finished drawing*/
 		if (SDL_Flip(window->sr) != 0) {
 			printf("ERROR: failed to flip buffer: %s\n", SDL_GetError());
 			break;
 		}
-		printf("%s\n", "hello everybody2");
-		fflush(stdout);
-		/* Poll for keyboard & mouse events*/
 
+		/* Poll for keyboard & mouse events*/
 		while (SDL_PollEvent(&event) != 0) {
 			switch (event.type) {
 				case (SDL_QUIT):
@@ -242,10 +179,8 @@ int play_gui(void) {
 		}
 
 		/* Wait a little before redrawing*/
-		SDL_Delay(1000);
+//		SDL_Delay(1000);
 	}
-	printf("%s\n", "hello everybody3");
-	fflush(stdout);
 	SDL_FreeSurface(background->sr);
 	return 0;
 }
