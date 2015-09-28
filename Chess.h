@@ -63,7 +63,9 @@ struct move_st;
 typedef struct move_st move;
 struct widget_st;
 typedef struct widget_st widget;
- 
+struct button_st;
+typedef struct button_st button;
+
 // console functions
 void print_board( char board[BOARD_SIZE][BOARD_SIZE] );
 void init_board( char board[BOARD_SIZE][BOARD_SIZE] );
@@ -100,9 +102,15 @@ int play_gui(void);
 void quit_allocation_error(void);
 SDL_Surface *load_image( char *filename );
 widget *build_window(void);
-widget *build_panel(int x, int y, int size_w, int size_h, char *filename); 
+widget *build_panel(int x, int y, int size_w, int size_h, char *filename, int id);
+button *build_button(int x, int y, int size_w, int size_h, char *filename, char *filename2, char *filename3, char name, int is_board); 
 void apply_surface( int x, int y, SDL_Surface *source, SDL_Surface *destination );
 int init(void);
+void refresh_button(widget *panel, button *butt);
+widget *init_main(void);
+int do_job(button *but);
+
+
 
 
 #endif
