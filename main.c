@@ -10,7 +10,7 @@ int GAME = 0;
 int SETTINGS = 1;
 int GAME_STATUS = 0; // '0' - ongoing game, '1' - tie, '2' someone wins.
 int GUI_MODE = 0; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
-int TWO_PLAYERS_MODE = 1; // '1' - two players mode, '2' - player vs. AI mode
+int TWO_PLAYERS_MODE = 1; // '1' - two players mode, '2'(0) - player vs. AI mode
 int WHITE_TURN = 1; // 0 - black, 1- white
 int PLAYER_WHITE = 1; //???
 char board[BOARD_SIZE][BOARD_SIZE]; // the Board 
