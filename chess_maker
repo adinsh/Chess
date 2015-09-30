@@ -16,4 +16,4 @@ xml_parser.o: xml_parser.c
 	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm xml_parser.c `sdl-config --cflags`
 
 gui.o: gui.c
-	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm gui.c `sdl-config --cflags`
+	gcc  -std=c99 -pedantic-errors -c -Wall -g -lm gui.c `sdl-config --cflags` 

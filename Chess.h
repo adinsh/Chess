@@ -100,7 +100,7 @@ char *str_row(char row_buff[9], int row);
 //GUI functions
 int play_gui(void);
 void quit_allocation_error(void);
-SDL_Surface *load_image( char *filename );
+SDL_Surface *load_image( char *filename, int transper );
 widget *build_window(void);
 widget *build_panel(int x, int y, int size_w, int size_h, char *filename, int id);
 button *build_button(int x, int y, int size_w, int size_h, SDL_Surface *sr, SDL_Surface *sr2, SDL_Surface *sr3,
@@ -109,7 +109,11 @@ void apply_surface( int x, int y, SDL_Surface *source, SDL_Surface *destination 
 int init(void);
 void refresh_button(widget *panel, button *butt);
 widget *init_main(void);
-int do_job(button *but);
+int activate_buttons_function(button *but);
+int activate_button_main_w(button *but);
+void activate_button_settings_w(button *but);
+void activate_button_set_diff_w(button *but);
+
 void back_to_default(void);
 
 

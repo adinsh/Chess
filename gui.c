@@ -51,6 +51,8 @@ struct button_st
 {
 	int board_button; //0-normal, 1-board_button 
 	char name;
+	int row;
+	int column;
 	int active;
 	int selected;
 	int highlight;
@@ -68,9 +70,10 @@ struct button_st
 
 	SDL_Rect rct;
 };
-widget *window = NULL;
-widget *main_w = NULL;
-widget *settings_w = NULL;
+widget *window = NULL; // id: 0
+widget *main_w = NULL; // id: 1
+widget *settings_w = NULL; // id: 2
+widget *set_diff_w = NULL; // id: 3
 
 //---------------------------------------------------------------------------------// 
 		/* ----Factories for Widgets---- */
@@ -79,7 +82,7 @@ widget *build_panel(int x, int y, int size_w, int size_h, char *filename, int id
 	widget *panel = NULL;
 	if ( (panel = (widget*)malloc(sizeof(widget))) == NULL ) quit_allocation_error(); //???
 	panel->id = id;
-	panel->sr = load_image(filename);
+	panel->sr = load_image(filename, 0);
 	panel->child = NULL;
 	panel->brother = NULL;
 	SDL_Rect recta = {x, y, size_w, size_h};
@@ -134,6 +137,8 @@ button *build_button(int x, int y, int size_w, int size_h, SDL_Surface *sr, SDL_
 	but->selected = 0;
 	but->highlight = 0;
 	but->special = 0;
+	but->row = -1;
+	but->column = -1;
 	but->up = NULL;
 	but->down = NULL;
 	but->left = NULL;
@@ -154,10 +159,10 @@ widget *init_main(void)
 
 	widget *main_w = build_panel(0, 0, WIN_W, WIN_H, "pics/main_w.bmp", 1);
 
-	button *quit_b = build_button(250,200 + (2*space), width_b, height_b, load_image("pics/quit_b1.bmp"), load_image("pics/quit_b2.bmp"), load_image("pics/quit_b3.bmp"), NULL, NULL, 'q', 0);
-	button *new_game_b = build_button(250,200 + (0*space), width_b, height_b, load_image("pics/new_b1.bmp"), load_image("pics/new_b2.bmp"), load_image("pics/new_b3.bmp"), NULL, NULL, 'n', 0);
-	button *load_game_b = build_button(250,200 + (1*space), width_b, height_b, load_image("pics/load_b1.bmp"), load_image("pics/load_b2.bmp"), load_image("pics/load_b3.bmp"), NULL, NULL, 'l',0);
-
+	button *quit_b = build_button(250,200 + (2*space), width_b, height_b, load_image("pics/quit_b1.bmp", 0), load_image("pics/quit_b2.bmp", 0), load_image("pics/quit_b3.bmp", 0), NULL, NULL, 'q', 0);
+	button *new_game_b = build_button(250,200 + (0*space), width_b, height_b, load_image("pics/new_b1.bmp", 0), load_image("pics/new_b2.bmp", 0), load_image("pics/new_b3.bmp", 0), NULL, NULL, 'n', 0);
+	button *load_game_b = build_button(250,200 + (1*space), width_b, height_b, load_image("pics/load_b1.bmp", 0), load_image("pics/load_b2.bmp", 0), load_image("pics/load_b3.bmp", 0), NULL, NULL, 'l',0);
+    
 	quit_b->up = load_game_b;
 	load_game_b->down = quit_b;
 	load_game_b->up = new_game_b;
@@ -184,46 +189,46 @@ widget *init_settings(void)
 
 	widget *settings_w = build_panel(0, 0, WIN_W, WIN_H, "pics/settings/settings_w.bmp", 2);
 
-	button *set_white_b = build_button(42,305, width_b_1, height_b, load_image("pics/settings/set_white_b.bmp"),
-																	load_image("pics/settings/set_white_b2.bmp"), 
-																	load_image("pics/settings/set_white_b3.bmp"), 
-																	load_image("pics/settings/set_white_b4.bmp"), 
-																	load_image("pics/settings/set_white_b5.bmp"),'w', 0);
-	button *set_black_b = build_button(42+width_b_1+50,305, width_b_1, height_b, load_image("pics/settings/set_black_b.bmp"), 
-																				 load_image("pics/settings/set_black_b2.bmp"), 
-																				 load_image("pics/settings/set_black_b3.bmp"), 
-																				 load_image("pics/settings/set_black_b4.bmp"), 
-																				 load_image("pics/settings/set_black_b5.bmp"), 'b', 0);
+	button *set_white_b = build_button(42,305, width_b_1, height_b, load_image("pics/settings/set_white_b.bmp", 0),
+																	load_image("pics/settings/set_white_b2.bmp", 0), 
+																	load_image("pics/settings/set_white_b3.bmp", 0), 
+																	load_image("pics/settings/set_white_b4.bmp", 0), 
+																	load_image("pics/settings/set_white_b5.bmp", 0),'w', 0);
+	button *set_black_b = build_button(42+width_b_1+50,305, width_b_1, height_b, load_image("pics/settings/set_black_b.bmp", 0), 
+																				 load_image("pics/settings/set_black_b2.bmp", 0), 
+																				 load_image("pics/settings/set_black_b3.bmp", 0), 
+																				 load_image("pics/settings/set_black_b4.bmp", 0), 
+																				 load_image("pics/settings/set_black_b5.bmp", 0), 'b', 0);
 	
-	button *set_playervsplayer_b = build_button(42,185, width_b_2, height_b, load_image("pics/settings/set_playervsplayer_b.bmp"),
-																			 load_image("pics/settings/set_playervsplayer_b2.bmp"), 
-																			 load_image("pics/settings/set_playervsplayer_b3.bmp"), 
-																			 load_image("pics/settings/set_playervsplayer_b4.bmp"), 
-																			 load_image("pics/settings/set_playervsplayer_b5.bmp"), 'p',0);
-	button *set_playervscomputer_b = build_button(42+width_b_2+50,185, width_b_2, height_b, load_image("pics/settings/set_playervscomputer_b.bmp"), 
-																							load_image("pics/settings/set_playervscomputer_b2.bmp"), 
-																							load_image("pics/settings/set_playervscomputer_b3.bmp"), 
-																							load_image("pics/settings/set_playervscomputer_b4.bmp"), 
-																							load_image("pics/settings/set_playervscomputer_b5.bmp"), 'c', 0);
-	button *set_changeboard_b = build_button(250,425, width_b_2, height_b, load_image("pics/settings/set_changeboard_b.bmp"), 
-																		   load_image("pics/settings/set_changeboard_b2.bmp"), 
-																		   load_image("pics/settings/set_changeboard_b3.bmp"), 
+	button *set_playervsplayer_b = build_button(42,185, width_b_2, height_b, load_image("pics/settings/set_playervsplayer_b.bmp", 0),
+																			 load_image("pics/settings/set_playervsplayer_b2.bmp", 0), 
+																			 load_image("pics/settings/set_playervsplayer_b3.bmp", 0), 
+																			 load_image("pics/settings/set_playervsplayer_b4.bmp", 0), 
+																			 load_image("pics/settings/set_playervsplayer_b5.bmp", 0), 'p',0);
+	button *set_playervscomputer_b = build_button(42+width_b_2+50,185, width_b_2, height_b, load_image("pics/settings/set_playervscomputer_b.bmp", 0), 
+																							load_image("pics/settings/set_playervscomputer_b2.bmp", 0), 
+																							load_image("pics/settings/set_playervscomputer_b3.bmp", 0), 
+																							load_image("pics/settings/set_playervscomputer_b4.bmp", 0), 
+																							load_image("pics/settings/set_playervscomputer_b5.bmp", 0), 'c', 0);
+	button *set_changeboard_b = build_button(250,425, width_b_2, height_b, load_image("pics/settings/set_changeboard_b.bmp", 0), 
+																		   load_image("pics/settings/set_changeboard_b2.bmp", 0), 
+																		   load_image("pics/settings/set_changeboard_b3.bmp", 0), 
 																		   NULL, 
 																		   NULL, 's', 0);
 	
-	button *set_mainmenu_b = build_button(35,545, width_b_3, height_b, load_image("pics/settings/set_mainmenu_b.bmp"), 
-																	   load_image("pics/settings/set_mainmenu_b2.bmp"), 
-																	   load_image("pics/settings/set_mainmenu_b3.bmp"), 
+	button *set_mainmenu_b = build_button(35,545, width_b_3, height_b, load_image("pics/settings/set_mainmenu_b.bmp", 0), 
+																	   load_image("pics/settings/set_mainmenu_b2.bmp", 0), 
+																	   load_image("pics/settings/set_mainmenu_b3.bmp", 0), 
 																	   NULL, 
 																	   NULL, 'm', 0);
-	button *set_play_b = build_button(525,545, width_b_4, height_b, load_image("pics/settings/set_play_b.bmp"), 
-																	load_image("pics/settings/set_play_b2.bmp"), 
-																	load_image("pics/settings/set_play_b3.bmp"), 
+	button *set_play_b = build_button(525,545, width_b_4, height_b, load_image("pics/settings/set_play_b.bmp", 0), 
+																	load_image("pics/settings/set_play_b2.bmp", 0), 
+																	load_image("pics/settings/set_play_b3.bmp", 0), 
 																	NULL, 
 																	NULL, 'g', 0);
-	button *set_setdificulty_b = build_button(525,545, width_b_4, height_b, load_image("pics/settings/set_setdifficulty_b.bmp"), 
-																			load_image("pics/settings/set_setdifficulty_b2.bmp"), 
-																			load_image("pics/settings/set_setdifficulty_b3.bmp"), 
+	button *set_setdificulty_b = build_button(525,545, width_b_4, height_b, load_image("pics/settings/set_setdifficulty_b.bmp", 0), 
+																			load_image("pics/settings/set_setdifficulty_b2.bmp", 0), 
+																			load_image("pics/settings/set_setdifficulty_b3.bmp", 0), 
 																			NULL, 
 																			NULL, 'd', 0);
 
@@ -279,6 +284,145 @@ widget *init_settings(void)
 	return settings_w;
 }
 
+widget *init_set_diff(void)
+{
+	widget *set_diff_w = build_panel(0, 0, WIN_W, WIN_H, "pics/set_diff/set_diff_w.bmp", 3);
+	int width_b_1 = 120;
+	int width_b_2 = 100;
+	int width_b_3 = 180;
+	int width_b_4 = 240;
+	int height_b = 48;
+
+	button *set_white_b = build_button(42,425, width_b_1, height_b, load_image("pics/set_diff/set_white_b.bmp", 0),
+																	load_image("pics/set_diff/set_white_b2.bmp", 0), 
+																	load_image("pics/set_diff/set_white_b3.bmp", 0), 
+																	load_image("pics/set_diff/set_white_b4.bmp", 0), 
+																	load_image("pics/set_diff/set_white_b5.bmp", 0),'w', 0);
+																	
+	button *set_black_b = build_button(42+width_b_1+50,425, width_b_1, height_b, load_image("pics/set_diff/set_black_b.bmp", 0), 
+																				 load_image("pics/set_diff/set_black_b2.bmp", 0), 
+																				 load_image("pics/set_diff/set_black_b3.bmp", 0), 
+																				 load_image("pics/set_diff/set_black_b4.bmp", 0), 
+																				 load_image("pics/set_diff/set_black_b5.bmp", 0), 'b', 0);
+																				 
+	button *set_mainmenu_b = build_button(35,545, width_b_3, height_b, load_image("pics/set_diff/set_mainmenu_b.bmp", 0), 
+																	   load_image("pics/set_diff/set_mainmenu_b2.bmp", 0), 
+																	   load_image("pics/set_diff/set_mainmenu_b3.bmp", 0), 
+																	   NULL, 
+																	   NULL, 'm', 0);
+																	   
+	button *set_play_b = build_button(525,545, width_b_4, height_b, load_image("pics/set_diff/set_play_b.bmp", 0), 
+																	load_image("pics/set_diff/set_play_b2.bmp", 0), 
+																	load_image("pics/set_diff/set_play_b3.bmp", 0), 
+																	NULL, 
+																	NULL, 'g', 0);
+	
+	button *set_diff_1_b = build_button(42,216, width_b_2, height_b, load_image("pics/set_diff/set_diff_1_b.bmp", 0), 
+																	load_image("pics/set_diff/set_diff_1_b2.bmp", 0), 
+																	load_image("pics/set_diff/set_diff_1_b3.bmp", 0), 
+																	load_image("pics/set_diff/set_diff_1_b4.bmp", 0), 
+																	load_image("pics/set_diff/set_diff_1_b5.bmp", 0), '1', 0);
+	
+	button *set_diff_2_b = build_button(42 + width_b_1, 216, width_b_2, height_b, load_image("pics/set_diff/set_diff_2_b.bmp", 0), 
+																load_image("pics/set_diff/set_diff_2_b2.bmp", 0), 
+																load_image("pics/set_diff/set_diff_2_b3.bmp", 0), 
+																load_image("pics/set_diff/set_diff_2_b4.bmp", 0), 
+																load_image("pics/set_diff/set_diff_2_b5.bmp", 0), '2', 0);
+	
+	button *set_diff_3_b = build_button(42 + width_b_1*2, 216, width_b_2, height_b, load_image("pics/set_diff/set_diff_3_b.bmp", 0), 
+															load_image("pics/set_diff/set_diff_3_b2.bmp", 0), 
+															load_image("pics/set_diff/set_diff_3_b3.bmp", 0), 
+															load_image("pics/set_diff/set_diff_3_b4.bmp", 0), 
+															load_image("pics/set_diff/set_diff_3_b5.bmp", 0), '3', 0);
+
+	button *set_diff_4_b = build_button(42 + width_b_1*3, 216, width_b_2, height_b, load_image("pics/set_diff/set_diff_4_b.bmp", 0), 
+															load_image("pics/set_diff/set_diff_4_b2.bmp", 0), 
+															load_image("pics/set_diff/set_diff_4_b3.bmp", 0), 
+															load_image("pics/set_diff/set_diff_4_b4.bmp", 0), 
+															load_image("pics/set_diff/set_diff_4_b5.bmp", 0), '4', 0);
+
+	button *set_diff_5_b = build_button(42 + width_b_1*4, 216, width_b_2, height_b, load_image("pics/set_diff/set_diff_5_b.bmp", 0), 
+															load_image("pics/set_diff/set_diff_5_b2.bmp", 0), 
+															load_image("pics/set_diff/set_diff_5_b3.bmp", 0), 
+															load_image("pics/set_diff/set_diff_5_b4.bmp", 0), 
+															load_image("pics/set_diff/set_diff_5_b5.bmp", 0), '5', 0);
+
+	button *set_diff_back_b = build_button(310,545, width_b_3, height_b, load_image("pics/set_diff/back_b.bmp", 0), 
+															load_image("pics/set_diff/back_b2.bmp", 0), 
+															load_image("pics/set_diff/back_b3.bmp", 0), 
+															NULL, 
+															NULL, 'B', 0);
+
+	//set buttons' next pointers
+	set_diff_w->kid =  set_diff_1_b;
+	set_diff_1_b->next = set_diff_2_b;
+	set_diff_2_b->next = set_diff_3_b;
+	set_diff_3_b->next = set_diff_4_b;
+	set_diff_4_b->next = set_diff_5_b;
+	set_diff_5_b->next = set_white_b;
+	set_white_b->next = set_black_b;
+	set_black_b->next = set_mainmenu_b;
+	set_mainmenu_b->next = set_diff_back_b;									
+	set_diff_back_b->next = set_play_b;									
+	
+	//set buttons' keyboard pointers
+	set_white_b->right = set_black_b;
+	set_white_b->down =  set_mainmenu_b;
+	set_white_b->up = set_diff_1_b;
+	
+	set_black_b->left = set_white_b;
+	set_black_b->down = set_diff_back_b;
+	set_black_b->up = set_diff_3_b;
+	
+	set_diff_1_b->right = set_diff_2_b;
+	set_diff_1_b->down = set_white_b;
+	
+	set_diff_2_b->right = set_diff_3_b;
+	set_diff_2_b->left = set_diff_1_b;
+	set_diff_2_b->down = set_white_b;
+	
+	set_diff_3_b->right = set_diff_4_b;
+	set_diff_3_b->left = set_diff_2_b;
+	set_diff_3_b->down = set_black_b;
+
+	set_diff_4_b->right = set_diff_5_b;
+	set_diff_4_b->left = set_diff_3_b;
+	set_diff_4_b->down = set_black_b;
+
+	set_diff_5_b->left = set_diff_4_b;
+	set_diff_5_b->down = set_black_b;
+	
+	set_mainmenu_b->up = set_white_b;
+	set_mainmenu_b->right = set_diff_back_b;
+	
+	set_diff_back_b->up = set_white_b;
+	set_diff_back_b->right = set_play_b;
+	set_diff_back_b->left = set_mainmenu_b;
+	
+	set_play_b->up = set_black_b;
+	set_play_b->left = set_diff_back_b;
+
+	//set buttons' states
+	set_diff_1_b->special = 1;
+	set_diff_1_b->active = 0;
+	set_white_b->special = 1;
+	set_white_b->active = 0;
+	set_white_b->highlight = 1;
+	
+	//put the buttons on the screen
+	apply_surface(set_white_b->rct.x, set_white_b->rct.y, set_white_b->sr4, set_diff_w->sr);
+	apply_surface(set_black_b->rct.x, set_black_b->rct.y, set_black_b->sr, set_diff_w->sr);
+	apply_surface(set_diff_1_b->rct.x, set_diff_1_b->rct.y, set_diff_1_b->sr5, set_diff_w->sr);
+	apply_surface(set_diff_2_b->rct.x, set_diff_2_b->rct.y, set_diff_2_b->sr, set_diff_w->sr);
+	apply_surface(set_diff_3_b->rct.x, set_diff_3_b->rct.y, set_diff_3_b->sr, set_diff_w->sr);
+	apply_surface(set_diff_4_b->rct.x, set_diff_4_b->rct.y, set_diff_4_b->sr, set_diff_w->sr);
+	apply_surface(set_diff_5_b->rct.x, set_diff_5_b->rct.y, set_diff_5_b->sr, set_diff_w->sr);
+	apply_surface(set_mainmenu_b->rct.x, set_mainmenu_b->rct.y, set_mainmenu_b->sr, set_diff_w->sr);
+	apply_surface(set_play_b->rct.x, set_play_b->rct.y, set_play_b->sr, set_diff_w->sr);
+	apply_surface(set_diff_back_b->rct.x, set_diff_back_b->rct.y, set_diff_back_b->sr, set_diff_w->sr);
+
+	return set_diff_w;																	
+}
 //---------------------------------------------------------------------------------//
 		/* ----General methods---- */
 		
@@ -288,7 +432,7 @@ void quit_allocation_error(void)
     exit(1);
 }
 
-SDL_Surface *load_image( char *filename ) 
+SDL_Surface *load_image( char *filename, int transper ) 
 {
     //Temporary storage for the image that's loaded
     SDL_Surface* loadedImage = NULL;
@@ -302,10 +446,18 @@ SDL_Surface *load_image( char *filename )
     {
         //Create an optimized image
         optimizedImage = SDL_DisplayFormat(loadedImage);
-        
-        //Free the old image
-        SDL_FreeSurface(loadedImage);
-    }
+		
+        if ( transper && (optimizedImage != NULL) )
+		{
+			//Map the color key
+			Uint32 colorkey = SDL_MapRGB(optimizedImage->format, 0, 0, 0);
+			SDL_SetColorKey(optimizedImage, SDL_SRCCOLORKEY, colorkey);
+
+		}
+		//Free the old image
+		SDL_FreeSurface(loadedImage);
+
+	}
 	//Return the optimized image
     return optimizedImage;
 }
@@ -334,7 +486,7 @@ int init(void)
     }
 	printf("%s\n", "0.01");
 	fflush(stdout);
-
+	
     window = build_window();
     //Set up the screen
     //If there was an error in setting up the screen
@@ -408,6 +560,18 @@ void reset_panel(widget * panel)
 					but = but->next;
 				}
 			break;
+		case (3): // reset set_diff
+			reset_panel(settings_w);
+			while(but != NULL)
+				{
+					but->active = (but->name == 'w' || but->name == '1') ? 0 : 1;
+					but->selected = 0;
+					but->highlight = 0;
+					but->special  = (but->name == 'w' ||  but->name == '1') ? 1: 0;
+					refresh_button(panel, but);
+					but = but->next;
+				}
+			break;
 		default:
 			break;
 	
@@ -441,86 +605,177 @@ void back_to_default(void) // we need to check if update is needed???
 }
 
 
-int do_job(button *but)
+int activate_buttons_function(button *but)
 {
 	int win_index = window->child->id;
 	but->selected = 0;
 	refresh_button(window->child, but);
+	switch (win_index)
+	{
+		case (1):
+			return activate_button_main_w(but);
+			break;
+		case (2):
+			activate_button_settings_w(but);
+			break;
+		case (3):
+			activate_button_set_diff_w(but);
+			break;
+	}
+	return 0;
+}
+
+int activate_button_main_w(button *but)
+{
 	switch (but->name)
 	{
 		case ('q'): 
-			if (win_index == 1) return 1; //quit button
-			break;
-		case ('m'): 
-			back_to_default(); //main menu button
+			return 1; //quit button
 			break;
 		case ('n'): 
-			if (win_index == 1) window->child = settings_w; //new game button
-			break;
-		case ('w'): 
-			if (win_index == 2) //settings- white player start
-			{
-				WHITE_TURN = 1;
-				but->special = 1;
-				but->active = 0;
-				refresh_button(window->child, but);
-				but->right->special = 0;
-				but->right->active =1;
-				refresh_button(window->child, but->right);
-			}
-			break;
-		case ('b'): 
-			if (win_index == 2) //settings- black player start
-			{
-				WHITE_TURN  = 0;
-				but->special = 1;
-				but->active = 0;
-				refresh_button(window->child, but);
-				but->left->special = 0;
-				but->left->active =1;
-				refresh_button(window->child, but->left);
-			}
-			break;
-		case ('p'): 
-			if (win_index == 2) //settings- white player start
-			{
-				TWO_PLAYERS_MODE = 1;
-				but->special = 1;
-				but->active = 0;
-				refresh_button(window->child, but);
-				but->right->special = 0;
-				but->right->active =1;
-				refresh_button(window->child, but->right);
-				but->down->down->down->right->active = 0;
-				but->down->down->down->right = but->down->down->down->next;
-				refresh_button(window->child, but->down->down->down->right);
-				but->down->down->down->right->active = 1;
-
-			}
-			break;
-		case ('c'): 
-			if (win_index == 2) //settings- white player start
-			{
-				TWO_PLAYERS_MODE = 0;
-				but->special = 1;
-				but->active = 0;
-				refresh_button(window->child, but);
-				but->left->special = 0;
-				but->left->active =1;
-				refresh_button(window->child, but->left);
-				but->down->down->down->right->active = 0;
-				but->down->down->down->right = but->down->down->down->right->next;
-				refresh_button(window->child, but->down->down->down->right);
-				but->down->down->down->right->active = 1;
-
-			}
+			window->child = settings_w; //new game button
 			break;
 		case ('l'): //load game button
 			//???
 			break;
-		
 	}
 	return 0;
+}
+
+void activate_button_settings_w(button *but)
+{
+	switch (but->name)
+	{
+		case ('m'): 
+			back_to_default(); //main menu button
+			break;
+		case ('w'): // white player start
+			WHITE_TURN = 1;
+			but->special = 1;
+			but->active = 0;
+			refresh_button(window->child, but);
+			but->right->special = 0;
+			but->right->active =1;
+			refresh_button(window->child, but->right);
+			break;
+		case ('b'): // black player start 
+			WHITE_TURN  = 0;
+			but->special = 1;
+			but->active = 0;
+			refresh_button(window->child, but);
+			but->left->special = 0;
+			but->left->active =1;
+			refresh_button(window->child, but->left);
+			break;
+		case ('p'): // player vs player
+			TWO_PLAYERS_MODE = 1;
+			but->special = 1;
+			but->active = 0;
+			refresh_button(window->child, but);
+			but->right->special = 0;
+			but->right->active =1;
+			refresh_button(window->child, but->right);
+			but->down->down->down->right->active = 0;
+			but->down->down->down->right = but->down->down->down->next;
+			refresh_button(window->child, but->down->down->down->right);
+			but->down->down->down->right->active = 1;
+			break;
+		case ('c'): // player vs computer
+			TWO_PLAYERS_MODE = 0;
+			but->special = 1;
+			but->active = 0;
+			refresh_button(window->child, but);
+			but->left->special = 0;
+			but->left->active =1;
+			refresh_button(window->child, but->left);
+			but->down->down->down->right->active = 0;
+			but->down->down->down->right = but->down->down->down->right->next;
+			refresh_button(window->child, but->down->down->down->right);
+			but->down->down->down->right->active = 1;
+			break;
+		case ('d'): //change to set difficulty window
+			but->highlight = 0;
+			refresh_button(window->child, but);
+			window->child->kid->highlight = 1;
+			refresh_button(window->child, window->child->kid);
+			window->child = set_diff_w;
+			break;
+		case ('g'): // ???
+			printf("%s\n","!!!!!!!!!!play!!!!!!!!!!!!!!!!!!");
+			break;
+		case ('s'): // ???
+			print_board(board);
+			break;
+			
+	}
+}
+
+void activate_button_set_diff_w(button *but)
+{
+	button *tmp = window->child->kid;
+	switch (but->name)
+	{
+		case ('m'): 
+			back_to_default(); //main menu button
+			break;
+		case ('w'): // player is white
+			PLAYER_WHITE = 1;
+			but->special = 1;
+			but->active = 0;
+			refresh_button(window->child, but);
+			but->right->special = 0;
+			but->right->active =1;
+			refresh_button(window->child, but->right);
+			break;
+		case ('b'): // player is black
+			PLAYER_WHITE = 0;
+			but->special = 1;
+			but->active = 0;
+			refresh_button(window->child, but);
+			but->left->special = 0;
+			but->left->active =1;
+			refresh_button(window->child, but->left);
+			break;
+		case ('1'):
+			MINIMAX_DEPTH = 1;
+			break;
+		case ('2'):
+			MINIMAX_DEPTH = 2;
+			break;
+		case ('3'):
+			MINIMAX_DEPTH = 3;
+			break;
+		case ('4'):
+			MINIMAX_DEPTH = 4;
+			break;
+		case ('5'):
+			MINIMAX_DEPTH = -1;
+			break;
+		case ('B'): //back to settings
+			but->highlight = 0;
+			refresh_button(window->child, but);
+			window->child->kid->highlight = 1;
+			refresh_button(window->child, window->child->kid);
+			window->child = settings_w;
+			break;
+		case ('g'): // ???
+			printf("%s\n","!!!!!!!!!!play!!!!!!!!!!!!!!!!!!");
+			break;
+	}
+	if ( (but->name >= '1') && (but->name <= '5') )
+	{
+		while(tmp != NULL)
+		{
+			tmp->special = 0;
+			tmp->active =1;
+			refresh_button(window->child, tmp);
+			tmp = tmp->right;
+		}
+		but->special = 1;
+		but->active = 0;
+		refresh_button(window->child, but);
+	}
+
 }
 //---------------------------------------------------------------------------------//
 	/* ----Main function----*/
@@ -535,6 +790,7 @@ int play_gui(void) {
 	SDL_Event event;
 	main_w = init_main();
 	settings_w = init_settings();
+	set_diff_w = init_set_diff();
 	printf("%s\n", "2");
 	fflush(stdout);
 
@@ -574,7 +830,7 @@ int play_gui(void) {
 			printf("ERROR: failed to flip buffer: %s\n", SDL_GetError());
 			break;
 		}
-		if (curr->selected) quit = do_job(curr);
+		if (curr->selected) quit = activate_buttons_function(curr);
 		
 		/* Poll for keyboard & mouse events*/
 		while (SDL_PollEvent(&event) != 0) {
