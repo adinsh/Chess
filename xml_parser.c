@@ -157,8 +157,10 @@ void load_row(char *row_str, int row_num)
 
 int  save_xml(const char *file_name)
 {
+	char full_path[70] = "load_save/";
+	strcat(full_path, file_name);
 	FILE *f_out;
-	if ( (f_out = fopen(file_name, "w")) == NULL ) return 1;
+	if ( (f_out = fopen(full_path, "w")) == NULL ) return 1;
 
 	char *next_turn = WHITE_TURN == 1 ? "White" : "Black";
 	char *game_mode = TWO_PLAYERS_MODE == 1 ? "1" : "2";

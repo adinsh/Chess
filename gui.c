@@ -78,6 +78,7 @@ struct button_st
 	SDL_Rect rct;
 };
 widget *window = NULL; // id: 0
+widget *welcome_to_chess_w = NULL; // id: -1
 widget *main_w = NULL; // id: 1
 widget *settings_w = NULL; // id: 2
 widget *set_diff_w = NULL; // id: 3
@@ -179,18 +180,22 @@ button *build_button(int x, int y, int size_w, int size_h, SDL_Surface *sr, SDL_
 
 //---------------------------------------------------------------------------------//
 		/* ----Build Screens---- */
-		
+widget *init_welcome(void)
+{
+	widget *welcome_w = build_panel(0, 0, WIN_W, WIN_H, "pics/welcome_w.bmp", -1);
+	return welcome_w;
+}
 widget *init_main(void)
 {
-	int width_b = 300;
-	int height_b = 80;
+	int width_b = 203;
+	int height_b = 54;
 	int space = 130;
 
-	widget *main_w = build_panel(0, 0, WIN_W, WIN_H, "pics/main_w.bmp", 1);
+	widget *main_w = build_panel(0, 0, WIN_W, WIN_H, "pics/main/main_w.bmp", 1);
 
-	button *quit_b = build_button(250,200 + (2*space), width_b, height_b, load_image("pics/quit_b1.bmp", 0), load_image("pics/quit_b2.bmp", 0), load_image("pics/quit_b3.bmp", 0), NULL, NULL, 'q', 0);
-	button *new_game_b = build_button(250,200 + (0*space), width_b, height_b, load_image("pics/new_b1.bmp", 0), load_image("pics/new_b2.bmp", 0), load_image("pics/new_b3.bmp", 0), NULL, NULL, 'n', 0);
-	button *load_game_b = build_button(250,200 + (1*space), width_b, height_b, load_image("pics/load_b1.bmp", 0), load_image("pics/load_b2.bmp", 0), load_image("pics/load_b3.bmp", 0), NULL, NULL, 'l',0);
+	button *quit_b = build_button(299,200 + (2*space), width_b, height_b, load_image("pics/main/quit_b1.bmp", 0), load_image("pics/main/quit_b2.bmp", 0), load_image("pics/main/quit_b3.bmp", 0), NULL, NULL, 'q', 0);
+	button *new_game_b = build_button(299,200 + (0*space), width_b, height_b, load_image("pics/main/new_b1.bmp", 0), load_image("pics/main/new_b2.bmp", 0), load_image("pics/main/new_b3.bmp", 0), NULL, NULL, 'n', 0);
+	button *load_game_b = build_button(299,200 + (1*space), width_b, height_b, load_image("pics/main/load_b1.bmp", 0), load_image("pics/main/load_b2.bmp", 0), load_image("pics/main/load_b3.bmp", 0), NULL, NULL, 'l',0);
     
 	quit_b->up = load_game_b;
 	load_game_b->down = quit_b;
@@ -1610,6 +1615,7 @@ int play_gui(void) {
 	init_gui_board(gui_board_game);
 	printf("%s\n", "2.1");
 	fflush(stdout);
+	welcome_to_chess_w =  init_welcome();
 	main_w = init_main();
 	settings_w = init_settings();
 	printf("%s\n", "2.2");
@@ -1621,11 +1627,19 @@ int play_gui(void) {
 	printf("%s\n", "2.4");
 	fflush(stdout);
 	load_game_w = init_load_game();
+	/*welcome to chess!!! */
+	window->child = welcome_to_chess_w;
+	apply_surface(window->child->rct.x, window->child->rct.y, window->child->sr, window->sr);
+	/* Wait a little before redrawing*/
+	if (SDL_Flip(window->sr) != 0) {
+			printf("ERROR: failed to flip buffer: %s\n", SDL_GetError());
+	}
+	SDL_Delay(3000);
+	
 	window->child = main_w; 
 	int quit = 0;
 	
-	widget *current = window;
-	apply_surface(current->child->rct.x, current->child->rct.y, current->child->sr, current->sr);
+	apply_surface(window->child->rct.x, window->child->rct.y, window->child->sr, window->sr);
 	
 	printf("%s\n", "3");
 	fflush(stdout);

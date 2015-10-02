@@ -26,7 +26,9 @@
 
 #define IS_WHITE(x) (((x) >= ('a')) && ((x) <= ('z')))
 #define IS_BLACK(x) (((x) >= ('A')) && ((x) <= ('Z')))
+#define IS_SAME_COLOR(x,y) (((IS_WHITE(x)) && (IS_WHITE(y))) || ((IS_BLACK(x)) && (IS_BLACK(y)))) // x not EMPTY or y not EMPTY
 #define IS_KING(x) (((x) == (WHITE_K))||((x) == (BLACK_K)))
+
 
 #define BUFF_SIZE 52
 
@@ -45,6 +47,7 @@
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
 
 #define ENTER_MOVE(x) (((x) == 1) ? "white player - enter your move:\n" : "black player - enter your move:\n")
+#define NOT_YOUR_PIECE "The specified position does not contain your piece\n"
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
 #define ILLEGAL_MOVE "Illegal move\n"
  
@@ -66,9 +69,10 @@ struct location_st   //define a location
 typedef struct location_st location;
 struct move_st   //define a move
 {
-  int what_eat; //???what have you eaten on the way
-  location *step; //will be a linked list of steps within this move	
+  location *from;
+  location *to; //will be a linked list of steps within this move	
   struct move_st *next;	//linked list of moves
+  char promote;
 };
 typedef struct move_st move;
 struct widget_st;
@@ -85,6 +89,10 @@ void init_board( char board[BOARD_SIZE][BOARD_SIZE] );
 void print_line( void );
 void read_input( char block[BUFF_SIZE] );
 void quit( void );
+location *create_location(int row, int column);
+move *create_move(int from_row, int from_column, int to_row, int to_column);
+void free_location(location *l);
+void free_move(move *m);
 int check_settings( void );
 void set_minmax_depth( int );
 void set_user_color( char *s );
@@ -96,11 +104,26 @@ void parse_input_settings( char input[BUFF_SIZE] );
 char to_piece( char *word );
 int is_legal_placement( location l, char piece );
 int is_legal_location( location l );
+int is_legal_move(move* m);
 void start_game(void);
 int parse_input_game( char input[BUFF_SIZE] );
 void play_computer_turn(void);
 int game_over(void);
 void declare_winner(void);
+move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn);
+move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *get_q_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
+move *link_moves(move *m1, move *m2);
+void do_move(char a_board[BOARD_SIZE][BOARD_SIZE], move *user_move);
+int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color);
+
+
+
 
 // XML functions
 int load_xml(char *file_pth);
@@ -133,6 +156,7 @@ void load_board_to_screen(widget *panel, button *gui_board[BOARD_SIZE][BOARD_SIZ
 widget *init_change_board(void);
 widget *init_load_game(void);
 void toggle_gui_board_active(int on_off, int clean_selected, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
+
 
 
 

@@ -119,6 +119,52 @@ void init_board( char board[BOARD_SIZE][BOARD_SIZE] )
 
 //						*************** General methods ****************
 
+location *create_location(int row, int column)
+{
+	location *l;
+	if ((l = (location *)malloc(1*sizeof(location))) == NULL) quit_allocation_error();
+	l->row = row;
+	l->column = column;
+	return l;
+}
+
+/** create move. if row==(-1) will create empty move.*/
+move *create_move(int from_row, int from_column, int to_row, int to_column)
+{
+	move *m;
+	if ((m = (move *)malloc(1*sizeof(move))) == NULL) quit_allocation_error();
+	m->next = NULL;
+	m->promote = EMPTY;
+	if (from_row == -1)
+	{
+		m->from = NULL; 
+		m->to = NULL;
+	}
+	else
+	{
+		m->from = create_location(from_row, from_column);;
+		m->to = create_location(to_row, to_column);;
+	}
+	return m;
+}
+/** frees location . */
+void free_location(location *l)
+{
+	if ( l != NULL ) free(l);
+}
+
+/** frees move (as a link list). */
+void free_move(move *m)
+{
+	if ( m != NULL )
+	{
+		free_move(m->next);
+		free_location(m->from);
+		free_location(m->to);
+		free(m);
+	}
+} 
+
 void quit( void )
 {
   exit(0);
@@ -378,10 +424,10 @@ void set_location( location l, int white, char piece )
 	else print_message(WRONG_POSITION);
 }
 
+//						*************** GAME methods ****************
 
-// GAME //
 
-/** returns 'l' if current player is still playing (the turn hasn't passed).
+/** returns '1' if current player is still playing (the turn hasn't passed).
   * else returns'0' (turn will pass to the next player).  
   * ????. */
 int parse_input_game( char input[BUFF_SIZE] )
@@ -397,7 +443,797 @@ int parse_input_game( char input[BUFF_SIZE] )
 		if ( save_xml(strtok(NULL, " ")) ) print_message(WRONG_FILE_NAME);
 		return 1; // repeat
 	}
+	else if ( strcmp(word, "move") == 0 ) // && !TWO_PLAYERS_MODE )
+	{
+		word = strtok(NULL, " ");
+		location from  = str_to_location(word);
+		word = strtok(NULL, " ");
+		word = strtok(NULL, " ");
+		location to  = str_to_location(word);
+		if ( !is_legal_location(from) || !is_legal_location(to))
+		{
+			print_message(WRONG_POSITION);
+			return 1; // repeat
+		}
+		else if ( (WHITE_TURN && !IS_WHITE(board[from.column][from.row])) || 
+				(!WHITE_TURN && !IS_BLACK(board[from.column][from.row])) )
+		{
+			print_message(NOT_YOUR_PIECE);
+			return 1; // repeat
+		}
+		move *m = create_move(from.row, from.column, to.row, to.column);
+		if ( !is_legal_move(m) ) 
+		{
+			free_move(m); 
+			print_message(ILLEGAL_MOVE);
+			return 1; // repeat
+		}
+		else
+		{			
+			do_move(board, m);
+			free_move(m);
+			print_board(board);
+		// check for tie / mate / check !! ???
+		}
+	}
 	return 0; // change???
+}
+
+/** return '1' of m is a legal move,
+  * '0' otherwise. */
+int is_legal_move(move* m)
+{
+	location *temp_loc1_from; //  pointer for the pattern moves
+	location *temp_loc1_to; // pointer for the user move
+	location *temp_loc2_from; //  pointer for the pattern moves
+	location *temp_loc2_to; // pointer for the user move
+	move *moves = get_moves(board, WHITE_TURN); //get pattern moves (legal) ///???
+	move * temp_moves = moves;
+	while(temp_moves != NULL){ // check if one of the pattern moves is the same as the user move
+		temp_loc1_from = temp_moves->from;
+		temp_loc2_from = m->from;
+		temp_loc1_to = temp_moves->to;
+		temp_loc2_to = m->to;
+		if ( temp_loc1_from != NULL  && temp_loc1_to != NULL && temp_loc2_from != NULL && temp_loc2_to != NULL ) 
+		{
+			if ( temp_loc1_from->row == temp_loc2_from->row && temp_loc1_from->column == temp_loc2_from->column 
+				&& temp_loc1_to->column == temp_loc2_to->column && temp_loc1_to->column == temp_loc2_to->column )
+			{
+				free_move(moves);
+				return 1;
+			}
+		}
+		temp_moves = temp_moves->next;
+	}
+	free_move(moves);
+	return 0;
+}
+move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
+{
+	move *all_moves = NULL;
+	location *loc = create_location(-1, -1);
+	for ( int row = 0; row < BOARD_SIZE; row++ )
+	{
+		for ( int column = 0; column < BOARD_SIZE; column++ )
+		{
+			if ( (IS_WHITE(a_board[column][row]) && white_turn) || (IS_BLACK(a_board[column][row]) && !white_turn) )
+			{
+				loc->row = row; 
+				loc->column = column;
+				all_moves = link_moves(all_moves, get_piece_moves(a_board, loc));
+			}
+		}
+	}
+	free_location(loc);
+	return all_moves;
+}
+// location 'from' is not EMPTY
+move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	char nrm_piece = (IS_WHITE(a_board[from->column][from->row])) ? 
+					 a_board[from->column][from->row] : a_board[from->column][from->row] - ('a' - 'A');  //normalize to white
+	switch(nrm_piece)
+	{
+		case (WHITE_P):
+			return get_p_moves(a_board, from);
+			break;
+		case (WHITE_B):
+			return get_b_moves(a_board, from);
+			break;
+		case (WHITE_N):
+			return get_n_moves(a_board, from);
+			break;
+		case (WHITE_R):
+			return get_r_moves(a_board, from);
+			break;
+		case (WHITE_Q):
+			return get_q_moves(a_board, from);
+			break;
+		case (WHITE_K):
+			return get_k_moves(a_board, from);
+			break;
+	}
+	return NULL;
+}
+
+move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	
+	move *res_moves = NULL;
+	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
+	char piece = a_board[from->column][from->row];
+	int direction = IS_WHITE(piece) ? 1 : -1;
+	location opt_locs[3];
+	opt_locs[0].row = from->row + direction;	
+	opt_locs[0].column = from->column;
+	opt_locs[1].row = from->row + direction;	
+	opt_locs[1].column = from->column - 1;
+	opt_locs[2].row = from->row + direction;
+	opt_locs[2].column = from->column + 1;
+	move *opt_moves[12];
+	for (int i = 12 ; i<12 ; i++) opt_moves[i] = NULL;
+	for (int i = 3 ; i<3 ; i++)	
+	{
+		if (is_legal_location(opt_locs[i]) && !IS_SAME_COLOR(piece,a_board[opt_locs[i].column][opt_locs[i].row])) 
+		{
+			if ( (IS_BLACK(piece) && opt_locs[i].row == 0 ) || (IS_WHITE(piece) && opt_locs[i].row == BOARD_SIZE-1) )
+			{
+				opt_moves[4*i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+				opt_moves[4*i]->promote = IS_WHITE(piece) ? WHITE_Q : BLACK_Q;
+				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+				do_move(a_board_copy, opt_moves[4*i]);
+				if (is_check(a_board_copy, IS_WHITE(piece)))
+				{
+					free_move(opt_moves[4*i]);
+					opt_moves[4*i] = NULL;
+				}
+				opt_moves[4*i+1 ] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+				opt_moves[4*i+1]->promote = IS_WHITE(piece) ? WHITE_B : BLACK_B;
+				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+				do_move(a_board_copy, opt_moves[4*i+1]);
+				if (is_check(a_board_copy, IS_WHITE(piece)))
+				{
+					free_move(opt_moves[4*i+1]);
+					opt_moves[4*i+1] = NULL;
+				}
+				opt_moves[4*i+2 ] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+				opt_moves[4*i+2]->promote = IS_WHITE(piece) ? WHITE_R : BLACK_R;
+				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+				do_move(a_board_copy, opt_moves[4*i+2]);
+				if (is_check(a_board_copy, IS_WHITE(piece)))
+				{
+					free_move(opt_moves[4*i+2]);
+					opt_moves[4*i+2] = NULL;
+				}
+				
+				opt_moves[4*i+3 ] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+				opt_moves[4*i+3]->promote = IS_WHITE(piece) ? WHITE_N : BLACK_N;
+				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+				do_move(a_board_copy, opt_moves[4*i+3]);
+				if (is_check(a_board_copy, IS_WHITE(piece)))
+				{
+					free_move(opt_moves[4*i+3]);
+					opt_moves[4*i+3] = NULL;
+				}			
+			}				
+			else
+			{
+				opt_moves[i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+				do_move(a_board_copy, opt_moves[i]);
+				if (is_check(a_board_copy, IS_WHITE(piece)))
+				{
+					free_move(opt_moves[i]);
+					opt_moves[i] = NULL;
+				}			
+			}				
+		}		
+	}
+	for (int i = 0 ; i<12 ; i++)
+	{
+		if (opt_moves[i] != NULL) 
+		{
+			if (res_moves==NULL) res_moves = opt_moves[i];
+			else
+			{
+				opt_moves[i]->next = res_moves;
+				res_moves = opt_moves[i];
+			}
+		}
+	}
+	return res_moves;
+}
+
+move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	move *res_moves = NULL;
+	char piece = a_board[from->column][from->row];
+	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
+	int up_first_seen = 0;
+	int down_first_seen = 0;
+	int right_first_seen = 0;
+	int left_first_seen = 0;
+	move *opt_moves[14];
+	int cnt_moves = 0;
+	location loc_to;
+	for (int i = 1 ; i < 14 ; i++) opt_moves[i] = NULL;
+	for (int i = 1 ; i < BOARD_SIZE ; i++)
+	{
+		if( !up_first_seen )
+		{
+			loc_to.row =  from->row + i;
+			loc_to.column = from->column;
+			if ( is_legal_location(loc_to) )
+			{				
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row])) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY ) up_first_seen = 1;
+			}
+		}
+		if(!down_first_seen)
+		{
+			loc_to.row =  from->row - i;
+			loc_to.column = from->column;
+			if (is_legal_location(loc_to))
+			{
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) ) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}				
+			
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY ) down_first_seen = 1;
+			}
+		}
+		if(!right_first_seen)
+		{
+			loc_to.row =  from->row;
+			loc_to.column = from->column + i;
+			if (is_legal_location(loc_to))
+			{				
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) ) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}			
+			
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY )right_first_seen = 1;
+			}
+		}
+		if(!left_first_seen)
+		{
+			loc_to.row =  from->row;
+			loc_to.column = from->column - i;
+			if ( is_legal_location(loc_to) )
+			{
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) ) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}		
+				
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY ) left_first_seen = 1;
+			}
+		}
+		
+	}
+	for (int i = 0 ; i<cnt_moves ; i++)
+	{
+		if (res_moves==NULL) res_moves = opt_moves[i];
+		else
+		{
+			opt_moves[i]->next = res_moves;
+			res_moves = opt_moves[i];
+		}
+	}
+	return res_moves;
+}
+
+move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	move *res_moves = NULL;
+	char piece = a_board[from->column][from->row];
+	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
+	int up_right_first_seen = 0;
+	int down_right_first_seen = 0;
+	int down_left_first_seen = 0;
+	int up_left_first_seen = 0;
+	move *opt_moves[14];
+	int cnt_moves = 0;
+	location loc_to;
+	for (int i = 1 ; i < 14 ; i++) opt_moves[i] = NULL;
+	for (int i = 1 ; i < BOARD_SIZE ; i++)
+	{
+		if( !up_right_first_seen )
+		{
+			loc_to.row =  from->row + i;
+			loc_to.column = from->column + i;
+			if ( is_legal_location(loc_to) )
+			{				
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) ) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY ) up_right_first_seen = 1;
+			}
+		}
+		if(!down_right_first_seen)
+		{
+			loc_to.row =  from->row - i;
+			loc_to.column = from->column + i;
+			if (is_legal_location(loc_to))
+			{
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) ) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}				
+			
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY ) down_right_first_seen = 1;
+			}
+		}
+		if(!down_left_first_seen)
+		{
+			loc_to.row =  from->row - i ;
+			loc_to.column = from->column - i;
+			if (is_legal_location(loc_to))
+			{				
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) ) 
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}			
+			
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY )down_left_first_seen = 1;
+			}
+		}
+		if(!up_left_first_seen)
+		{
+			loc_to.row =  from->row + i;
+			loc_to.column = from->column - i;
+			if ( is_legal_location(loc_to) )
+			{
+				if( !IS_SAME_COLOR(piece, a_board[loc_to.column][loc_to.row]) )
+				{
+					opt_moves[cnt_moves] = create_move(from->row, from->column, loc_to.row, loc_to.column);
+					memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+					do_move(a_board_copy, opt_moves[cnt_moves]);
+					if (is_check(a_board_copy, IS_WHITE(piece)))
+					{
+						free_move(opt_moves[cnt_moves]);
+						opt_moves[cnt_moves] = NULL;
+						cnt_moves--;
+					}			
+					cnt_moves++;
+				}		
+				
+				if ( a_board[loc_to.column][loc_to.row] != EMPTY ) up_left_first_seen = 1;
+			}
+		}
+		
+	}
+	for (int i = 0 ; i<cnt_moves ; i++)
+	{
+		if (res_moves==NULL) res_moves = opt_moves[i];
+		else
+		{
+			opt_moves[i]->next = res_moves;
+			res_moves = opt_moves[i];
+		}
+	}
+	return res_moves;
+}
+
+move *get_q_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	return link_moves(get_b_moves(a_board, from), get_r_moves(a_board, from));
+}
+move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	move *res_moves = NULL;
+	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
+	char piece = a_board[from->column][from->row];
+	location opt_locs[8];
+	move *opt_moves[8];
+	for (int i = 0; i < 8; i++) opt_moves[i] = NULL; // initialize array to NULL
+	opt_locs[0].row = from->row + 1;		//| | |*|
+	opt_locs[0].column = from->column + 2;  //|n|
+	opt_locs[1].row = from->row + 1;			//|*| | |
+	opt_locs[1].column = from->column - 2;	    //    |n|
+	opt_locs[2].row = from->row + 2;		 
+	opt_locs[2].column = from->column + 1;
+	opt_locs[3].row = from->row + 2;	
+	opt_locs[3].column = from->column - 1;
+	opt_locs[4].row = from->row - 1;	
+	opt_locs[4].column = from->column + 2;
+	opt_locs[5].row = from->row - 1;
+	opt_locs[5].column = from->column + 2;
+	opt_locs[6].row = from->row - 2;	
+	opt_locs[6].column = from->column + 1;
+	opt_locs[7].row = from->row - 2;	
+	opt_locs[7].column = from->column - 1;
+	
+	for (int i = 0; i < 8; i++ )
+	{
+		if ( is_legal_location(opt_locs[i]) && !IS_SAME_COLOR(piece,a_board[opt_locs[i].column][opt_locs[i].row]) ) 
+		{		
+			opt_moves[i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+			memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+			do_move(a_board_copy, opt_moves[i]);
+			if (is_check(a_board_copy, IS_WHITE(piece)))
+			{
+				free_move(opt_moves[i]);
+				opt_moves[i] = NULL;
+			}
+		}
+	}
+	for (int i = 0 ; i < 8 ; i++)
+	{
+		if (res_moves==NULL) res_moves = opt_moves[i];
+		else
+		{
+			opt_moves[i]->next = res_moves;
+			res_moves = opt_moves[i];
+		}
+	}
+	return res_moves;
+}
+move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+{
+	move *res_moves = NULL;
+	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
+	char piece = a_board[from->column][from->row];
+	location opt_locs[8];
+	move *opt_moves[8];
+	for (int i = 0; i < 8; i++) opt_moves[i] = NULL; // initialize array to NULL
+	opt_locs[0].row = from->row + 1;		
+	opt_locs[0].column = from->column;  
+	opt_locs[1].row = from->row + 1;			
+	opt_locs[1].column = from->column + 1;	   
+	opt_locs[2].row = from->row + 1;		 
+	opt_locs[2].column = from->column - 1;
+	opt_locs[3].row = from->row;	
+	opt_locs[3].column = from->column + 1;
+	opt_locs[4].row = from->row;	
+	opt_locs[4].column = from->column - 1;
+	opt_locs[5].row = from->row - 1;
+	opt_locs[5].column = from->column;
+	opt_locs[6].row = from->row - 1;	
+	opt_locs[6].column = from->column + 1;
+	opt_locs[7].row = from->row - 1;	
+	opt_locs[7].column = from->column - 1;
+	
+	for (int i = 0; i < 8; i++ )
+	{
+		if ( is_legal_location(opt_locs[i]) && !IS_SAME_COLOR(piece,a_board[opt_locs[i].column][opt_locs[i].row]) ) 
+		{		
+			opt_moves[i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+			memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
+			do_move(a_board_copy, opt_moves[i]);
+			if (is_check(a_board_copy, IS_WHITE(piece)))
+			{
+				free_move(opt_moves[i]);
+				opt_moves[i] = NULL;
+			}
+		}
+	}
+	for (int i = 0 ; i < 8 ; i++)
+	{
+		if (res_moves==NULL) res_moves = opt_moves[i];
+		else
+		{
+			opt_moves[i]->next = res_moves;
+			res_moves = opt_moves[i];
+		}
+	}
+	return res_moves;
+	
+}
+move *link_moves(move *m1, move *m2)
+{
+	move *tmp;
+	if (m1 == NULL ) return m2;
+	if (m2 == NULL ) return m1;
+	else
+	{
+		tmp = m1;
+		while(tmp->next != NULL) tmp = tmp->next;
+		tmp->next = m2;
+	}
+	return m1;
+}
+
+void do_move(char a_board[BOARD_SIZE][BOARD_SIZE], move *user_move)
+{
+	char piece = a_board[user_move->from->column][user_move->from->row];
+	a_board[user_move->from->column][user_move->from->row] = EMPTY;
+	a_board[user_move->to->column][user_move->to->row] = ((piece == BLACK_P) || (piece == WHITE_P)) && (user_move->promote != EMPTY) ?
+														user_move->promote : piece; //promote if needed (promote != EMPTY)
+}
+
+
+//reterns 1 if the 'color' king is threatened else returns 0 ( color==0 -> black , color==1 -> white)
+int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
+{
+	int kings_row;
+	int kings_column;
+	int direction = color ? 1:-1;
+	location enemy_loc;
+	for( int row = 0 ; row < BOARD_SIZE ; row++ )
+	{
+		for( int column = 0 ; column < BOARD_SIZE ; column++ )
+		{
+			if(color && a_board[column][row] == WHITE_K)
+			{
+				kings_row = row;
+				kings_column = column;
+			}
+			else if(!color && a_board[column][row] == BLACK_K)
+			{
+				kings_row = row;
+				kings_column = column;
+			}
+		}
+	}
+	// checks if king is threatened by pawn
+	enemy_loc.row =  kings_row + direction;
+	enemy_loc.column = kings_column-1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_P ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_P ))) 
+		return 1;
+	enemy_loc.row =  kings_row + direction;
+	enemy_loc.column = kings_column + 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_P ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_P ))) 
+		return 1;
+	
+	// checks if king is threatened by Knight
+	enemy_loc.row =  kings_row + 2;
+	enemy_loc.column = kings_column - 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row + 2;
+	enemy_loc.column = kings_column + 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 2;
+	enemy_loc.column = kings_column - 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 2;
+	enemy_loc.column = kings_column + 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 1;
+	enemy_loc.column = kings_column + 2;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row + 1;
+	enemy_loc.column = kings_column + 2;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 1;
+	enemy_loc.column = kings_column - 2;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+	enemy_loc.row =  kings_row + 1;
+	enemy_loc.column = kings_column - 2;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_N ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_N ))) 
+		return 1;
+		
+	// checks if king is threatened by Rook, Queen, Bishop
+	int left_up_first_seen = 0;
+	int left_down_first_seen = 0;
+	int right_up_first_seen = 0;
+	int right_down_first_seen = 0;
+	int up_first_seen = 0;
+	int down_first_seen = 0;
+	int right_first_seen = 0;
+	int left_first_seen = 0;
+	
+	for (int i = 1 ; i < BOARD_SIZE ; i++)
+	{
+		if( !up_first_seen )
+		{
+			enemy_loc.row =  kings_row + i;
+			enemy_loc.column = kings_column;
+			if ( is_legal_location(enemy_loc) )
+			{				
+				if ( (color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_R ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_R )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q )) 
+				return 1;
+				
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) up_first_seen = 1;
+			}
+		}
+		if(!down_first_seen)
+		{
+			enemy_loc.row =  kings_row - i;
+			enemy_loc.column = kings_column;
+			if (is_legal_location(enemy_loc))
+			{
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_R ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_R )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+			
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) down_first_seen = 1;
+			}
+		}
+		if(!right_first_seen)
+		{
+			enemy_loc.row =  kings_row;
+			enemy_loc.column = kings_column + i;
+			if (is_legal_location(enemy_loc))
+			{				
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_R ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_R )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+			
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY )right_first_seen = 1;
+			}
+		}
+		if(!left_first_seen)
+		{
+			enemy_loc.row =  kings_row;
+			enemy_loc.column = kings_column - i;
+			if ( is_legal_location(enemy_loc) )
+			{
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_R ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_R )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+				
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) left_first_seen = 1;
+			}
+		}
+		
+		if(!left_up_first_seen)
+		{
+			enemy_loc.row =  kings_row - i;
+			enemy_loc.column = kings_column - i;
+			if ( is_legal_location(enemy_loc) ) 
+			{
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_B ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_B )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+			
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) left_up_first_seen = 1;
+			}
+		}
+		if(!left_down_first_seen)
+		{
+			enemy_loc.row =  kings_row + i;
+			enemy_loc.column = kings_column + i;
+			if ( is_legal_location(enemy_loc) )
+			{
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_B ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_B )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+			
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) left_down_first_seen = 1;
+			}
+		}
+		if(!right_up_first_seen)
+		{
+			enemy_loc.row =  kings_row - i;
+			enemy_loc.column = kings_column + i;
+			if (is_legal_location(enemy_loc) )
+			{
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_B ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_B )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+			
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) right_up_first_seen = 1;
+			}
+		}
+		if(!right_down_first_seen)
+		{
+			enemy_loc.row =  kings_row + i;
+			enemy_loc.column = kings_column - i;
+			if (is_legal_location(enemy_loc) )
+			{
+				if ((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_B ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_B )||
+				(color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_Q ) || 
+				(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_Q ))
+				return 1;
+				
+				if ( a_board[enemy_loc.column][enemy_loc.row] != EMPTY ) right_down_first_seen = 1;
+			}
+		}
+	}
+	return 0; //all is good no check
 }
 
 int game_over(void)
