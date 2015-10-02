@@ -10,11 +10,12 @@
 
 #define WINDOW 0
 #define MAIN_W 1
-#define A 2
-#define B 3
-#define C 4
-#define D 5
+#define SETTINGS_W 2
+#define SET_DIFFICULTY_W 3
+#define CHANGE_BOARD_W 4
+#define LOAD_GAME_W 5
 
+#define MEMORY_SLOTS 7 //how many possible load/save slots (a value between 1 to 12) 
 
 // Genral settings
 extern int MINIMAX_DEPTH;
@@ -36,6 +37,12 @@ extern int BLACK_CL_ENABLE;
 
 extern int CHECK_ON_WHITE;
 extern int CHECK_ON_BLACK;
+
+int is_remove_cmd = 0;
+int is_set_cmd = 0;
+int gui_board_from[2] = {-1,-1};
+int gui_board_to[2] = {-1,-1};
+char selected_piece = EMPTY; 
 
 struct widget_st 
 {
@@ -74,7 +81,29 @@ widget *window = NULL; // id: 0
 widget *main_w = NULL; // id: 1
 widget *settings_w = NULL; // id: 2
 widget *set_diff_w = NULL; // id: 3
+widget *change_board_w = NULL; // id: 4
+widget *load_game_w = NULL; // id: 5
 
+//all the pieces
+SDL_Surface *piece_empty = NULL;
+SDL_Surface *piece_white_p = NULL;
+SDL_Surface *piece_white_b = NULL;
+SDL_Surface *piece_white_n = NULL;
+SDL_Surface *piece_white_r = NULL;
+SDL_Surface *piece_white_q = NULL;
+SDL_Surface *piece_white_k = NULL;
+SDL_Surface *piece_black_p = NULL;
+SDL_Surface *piece_black_b = NULL;
+SDL_Surface *piece_black_n = NULL;
+SDL_Surface *piece_black_r = NULL;
+SDL_Surface *piece_black_q = NULL;
+SDL_Surface *piece_black_k = NULL;
+
+//
+
+
+button *gui_board_set[BOARD_SIZE][BOARD_SIZE];
+button *gui_board_game[BOARD_SIZE][BOARD_SIZE];
 //---------------------------------------------------------------------------------// 
 		/* ----Factories for Widgets---- */
 widget *build_panel(int x, int y, int size_w, int size_h, char *filename, int id) 
@@ -423,6 +452,467 @@ widget *init_set_diff(void)
 
 	return set_diff_w;																	
 }
+
+widget *init_change_board(void)
+{
+	int width_b_2 = 100;
+	int width_b_3 = 180;
+	int height_b = 48;
+	widget *change_board_w = build_panel(0, 0, WIN_W, WIN_H, "pics/change_board/change_board_w.bmp", 4);
+	
+	button *mainmenu_b = build_button(35,550, width_b_3, height_b, load_image("pics/change_board/mainmenu_b.bmp", 0), 
+																	   load_image("pics/change_board/mainmenu_b2.bmp", 0), 
+																	   load_image("pics/change_board/mainmenu_b3.bmp", 0), 
+																	   NULL, 
+																	   NULL, 'm', 0);
+	button *done_b = build_button(665,550, width_b_2, height_b, load_image("pics/change_board/done_b.bmp", 0), 
+																	   load_image("pics/change_board/done_b2.bmp", 0), 
+																	   load_image("pics/change_board/done_b3.bmp", 0), 
+																	   NULL, 
+																	   NULL, 'd', 0);
+	button *set_b = build_button(300,550, width_b_2, height_b, load_image("pics/change_board/set_b.bmp", 0), 
+																load_image("pics/change_board/set_b2.bmp", 0), 
+																load_image("pics/change_board/set_b3.bmp", 0), 
+																load_image("pics/change_board/set_b4.bmp", 0), 
+																load_image("pics/change_board/set_b5.bmp", 0), 's', 0);
+	button *remove_b = build_button(420,550, width_b_2, height_b, load_image("pics/change_board/remove_b.bmp", 0), 
+																load_image("pics/change_board/remove_b2.bmp", 0), 
+																load_image("pics/change_board/remove_b3.bmp", 0), 
+																load_image("pics/change_board/remove_b4.bmp", 0), 
+																load_image("pics/change_board/remove_b5.bmp", 0), 'r', 0);
+	button *clear_b = build_button(540,550, width_b_2, height_b, load_image("pics/change_board/clear_b.bmp", 0), 
+																load_image("pics/change_board/clear_b2.bmp", 0), 
+																load_image("pics/change_board/clear_b3.bmp", 0), 
+																NULL, NULL, 'z', 0);
+
+	button *message_b = build_button(160,510, 480, height_b, load_image("pics/change_board/msg_chs_st_rmv.bmp", 0), 
+																load_image("pics/change_board/msg_chs_plc_on_brd.bmp", 0), 
+																load_image("pics/change_board/msg_slct_pc_on_brd.bmp", 0), 
+																load_image("pics/change_board/msg_slct_typ_pc_add.bmp", 0), 
+																load_image("pics/change_board/msg_wrng_brd_init.bmp", 0), 'M', 0);
+	
+	button *select_piece_black_p = build_button(700,120, 40, 35, load_image("pics/change_board/piece_black_p.bmp", 1), 
+																load_image("pics/change_board/piece_black_p2.bmp", 1), 
+																load_image("pics/change_board/piece_black_p2.bmp", 1), 
+																load_image("pics/change_board/piece_black_p3.bmp", 1), 
+																load_image("pics/change_board/piece_black_p4.bmp", 1), '1', 0);
+
+	button *select_piece_black_b = build_button(700,120 + 60, 40, 35, load_image("pics/change_board/piece_black_b.bmp", 1), 
+																load_image("pics/change_board/piece_black_b2.bmp", 1), 
+																load_image("pics/change_board/piece_black_b2.bmp", 1), 
+																load_image("pics/change_board/piece_black_b3.bmp", 1), 
+																load_image("pics/change_board/piece_black_b4.bmp", 1), '2', 0);
+	button *select_piece_black_n = build_button(700,120 + 60*2, 40, 35, load_image("pics/change_board/piece_black_n.bmp", 1), 
+																load_image("pics/change_board/piece_black_n2.bmp", 1), 
+																load_image("pics/change_board/piece_black_n2.bmp", 1), 
+																load_image("pics/change_board/piece_black_n3.bmp", 1), 
+																load_image("pics/change_board/piece_black_n4.bmp", 1), '3', 0);
+	button *select_piece_black_r = build_button(700,120 + 60*3, 40, 35, load_image("pics/change_board/piece_black_r.bmp", 1), 
+																load_image("pics/change_board/piece_black_r2.bmp", 1), 
+																load_image("pics/change_board/piece_black_r2.bmp", 1), 
+																load_image("pics/change_board/piece_black_r3.bmp", 1), 
+																load_image("pics/change_board/piece_black_r4.bmp", 1), '4', 0);
+	button *select_piece_black_q = build_button(700,120 + 60*4, 40, 35, load_image("pics/change_board/piece_black_q.bmp", 1), 
+																load_image("pics/change_board/piece_black_q2.bmp", 1), 
+																load_image("pics/change_board/piece_black_q2.bmp", 1), 
+																load_image("pics/change_board/piece_black_q3.bmp", 1), 
+																load_image("pics/change_board/piece_black_q4.bmp", 1), '5', 0);
+	button *select_piece_black_k = build_button(700,120 + 60*5, 40, 35, load_image("pics/change_board/piece_black_k.bmp", 1), 
+																load_image("pics/change_board/piece_black_k2.bmp", 1), 
+																load_image("pics/change_board/piece_black_k2.bmp", 1), 
+																load_image("pics/change_board/piece_black_k3.bmp", 1), 
+																load_image("pics/change_board/piece_black_k4.bmp", 1), '6', 0);
+
+
+	button *select_piece_white_p = build_button(60,120, 40, 35, load_image("pics/change_board/piece_white_p.bmp", 1), 
+																load_image("pics/change_board/piece_white_p2.bmp", 1), 
+																load_image("pics/change_board/piece_white_p2.bmp", 1), 
+																load_image("pics/change_board/piece_white_p3.bmp", 1), 
+																load_image("pics/change_board/piece_white_p4.bmp", 1), 'A', 0);
+
+	button *select_piece_white_b = build_button(60,120 + 60, 40, 35, load_image("pics/change_board/piece_white_b.bmp", 1), 
+																load_image("pics/change_board/piece_white_b2.bmp", 1), 
+																load_image("pics/change_board/piece_white_b2.bmp", 1), 
+																load_image("pics/change_board/piece_white_b3.bmp", 1), 
+																load_image("pics/change_board/piece_white_b4.bmp", 1), 'B', 0);
+	button *select_piece_white_n = build_button(60,120 + 60*2, 40, 35, load_image("pics/change_board/piece_white_n.bmp", 1), 
+																load_image("pics/change_board/piece_white_n2.bmp", 1), 
+																load_image("pics/change_board/piece_white_n2.bmp", 1), 
+																load_image("pics/change_board/piece_white_n3.bmp", 1), 
+																load_image("pics/change_board/piece_white_n4.bmp", 1), 'C', 0);
+	button *select_piece_white_r = build_button(60,120 + 60*3, 40, 35, load_image("pics/change_board/piece_white_r.bmp", 1), 
+																load_image("pics/change_board/piece_white_r2.bmp", 1), 
+																load_image("pics/change_board/piece_white_r2.bmp", 1), 
+																load_image("pics/change_board/piece_white_r3.bmp", 1), 
+																load_image("pics/change_board/piece_white_r4.bmp", 1), 'D', 0);
+	button *select_piece_white_q = build_button(60,120 + 60*4, 40, 35, load_image("pics/change_board/piece_white_q.bmp", 1), 
+																load_image("pics/change_board/piece_white_q2.bmp", 1), 
+																load_image("pics/change_board/piece_white_q2.bmp", 1), 
+																load_image("pics/change_board/piece_white_q3.bmp", 1), 
+																load_image("pics/change_board/piece_white_q4.bmp", 1), 'E', 0);
+	button *select_piece_white_k = build_button(60,120 + 60*5, 40, 35, load_image("pics/change_board/piece_white_k.bmp", 1), 
+																load_image("pics/change_board/piece_white_k2.bmp", 1), 
+																load_image("pics/change_board/piece_white_k2.bmp", 1), 
+																load_image("pics/change_board/piece_white_k3.bmp", 1), 
+																load_image("pics/change_board/piece_white_k4.bmp", 1), 'F', 0);
+					
+	//set buttons' next pointers
+	printf("%s\n", "2.31");
+	fflush(stdout);
+	change_board_w->kid = gui_board_set[0][BOARD_SIZE-1];
+	printf("%s\n", "2.32");
+	fflush(stdout);
+	gui_board_set[BOARD_SIZE-1][0]->next = select_piece_black_p;
+	printf("%s\n", "2.33");
+	fflush(stdout);
+	select_piece_black_p->next = select_piece_black_b;
+	select_piece_black_b->next = select_piece_black_n;
+	select_piece_black_n->next = select_piece_black_r;
+	select_piece_black_r->next = select_piece_black_q;
+	select_piece_black_q->next = select_piece_black_k;
+	select_piece_black_k->next = select_piece_white_p;
+	select_piece_white_p->next = select_piece_white_b;
+	select_piece_white_b->next = select_piece_white_n;
+	select_piece_white_n->next = select_piece_white_r;
+	select_piece_white_r->next = select_piece_white_q;
+	select_piece_white_q->next = select_piece_white_k;
+	select_piece_white_k->next = mainmenu_b;
+	mainmenu_b->next = set_b;
+	set_b->next = remove_b;
+	remove_b->next = clear_b;
+	clear_b->next = done_b;
+	done_b->next = message_b;
+	printf("%s\n", "2.34");
+	fflush(stdout);
+	button *temp = change_board_w->kid;
+	while( temp != NULL )
+	{
+		refresh_button(change_board_w, temp);
+		temp->active = ( temp->name == 'r' || temp->name == 's' || temp->name == 'm' || temp->name == 'd'|| temp->name == 'z' ) ? 1:0;
+		temp = temp->next;
+		
+	}
+	
+	printf("%s\n", "2.35");
+	fflush(stdout);
+	//set arrows:
+	select_piece_white_k->right = gui_board_set[0][0];
+	select_piece_black_k->left = gui_board_set[BOARD_SIZE-1][0];
+	select_piece_white_r->right = gui_board_set[0][3];
+	select_piece_black_r->left = gui_board_set[BOARD_SIZE-1][3];
+	set_b->up = gui_board_set[3][0];
+	select_piece_white_b->right = gui_board_set[0][6];
+	select_piece_black_b->left = gui_board_set[BOARD_SIZE-1][6];
+	remove_b->up = gui_board_set[6][0];
+	printf("%s\n", "2.36");
+	fflush(stdout);
+	for ( int i = 0; i < BOARD_SIZE; i++ )
+	{
+		if ( i < 3 )
+		{
+			gui_board_set[0][i]->left = select_piece_white_k;
+			gui_board_set[BOARD_SIZE-1][i]->right = select_piece_black_k;
+			gui_board_set[i][0]->down = mainmenu_b;
+		}
+		else if ( i < 6 )
+		{
+			gui_board_set[0][i]->left = select_piece_white_r;
+			gui_board_set[BOARD_SIZE-1][i]->right = select_piece_black_r;
+			gui_board_set[i][0]->down = set_b;			
+		}
+		else
+		{
+			gui_board_set[0][i]->left = select_piece_white_p;
+			gui_board_set[BOARD_SIZE-1][i]->right = select_piece_black_p;
+			gui_board_set[i][0]->down = remove_b;			
+			
+		}
+		
+	}
+	printf("%s\n", "2.37");
+	fflush(stdout);
+	select_piece_black_p->down = select_piece_black_b;
+	select_piece_black_b->down = select_piece_black_n;
+	select_piece_black_b->up = select_piece_black_p;
+	select_piece_black_n->down = select_piece_black_r;
+	select_piece_black_n->up = select_piece_black_b;
+	select_piece_black_r->down = select_piece_black_q;
+	select_piece_black_r->up = select_piece_black_n;
+	select_piece_black_q->down = select_piece_black_k;
+	select_piece_black_q->up = select_piece_black_r;
+	select_piece_black_k->down = done_b;
+	select_piece_black_k->up = select_piece_black_q;
+	done_b->up = select_piece_black_k;
+	select_piece_white_p->down = select_piece_white_b;
+	select_piece_white_b->down = select_piece_white_n;
+	select_piece_white_b->up = select_piece_white_p;
+	select_piece_white_n->down = select_piece_white_r;
+	select_piece_white_n->up = select_piece_white_b;
+	select_piece_white_r->down = select_piece_white_q;
+	select_piece_white_r->up = select_piece_white_n;
+	select_piece_white_q->down = select_piece_white_k;
+	select_piece_white_q->up = select_piece_white_r;
+	select_piece_white_k->down = mainmenu_b;
+	select_piece_white_k->up = select_piece_white_q;
+	mainmenu_b->up = select_piece_white_k;
+	mainmenu_b->right = set_b;
+	set_b->right = remove_b;
+	set_b->left = mainmenu_b;
+	remove_b->right = clear_b;
+	remove_b->left = set_b;
+	clear_b->right = done_b;
+	clear_b->left = remove_b;
+	clear_b->up = select_piece_black_k;
+	done_b->left = remove_b;
+	
+	
+	
+	change_board_w->kid->highlight = 1;
+	refresh_button(change_board_w,change_board_w->kid);
+	return change_board_w;
+}
+widget *init_load_game(void)
+{
+	button *slots[12];
+	int width_b_3 = 180;
+	int height_b = 48;
+	int slot_size = 120;
+	int offset = 120;
+	int x_start = 156;
+	int y_start = 120;
+	int jump_row = -1;
+	int number_of_rows = 0;
+	int number_of_buts_last_row = MEMORY_SLOTS%4 ? MEMORY_SLOTS%4 : 4;
+	printf("%s\n", "2.41");
+	fflush(stdout);
+	for ( int i = 0; i < 12; slots[i] = NULL, i++ );
+	for (int j = MEMORY_SLOTS; j > 0; ++number_of_rows, j = j-4); 
+	printf("%s\n", "2.42");
+	fflush(stdout);
+	widget *load_game_w = build_panel(0, 0, WIN_W, WIN_H, "pics/load_game/load_game_w.bmp", 5);
+	
+	button *mainmenu_b = build_button(35,550, width_b_3, height_b, load_image("pics/load_game/mainmenu_b.bmp", 0), 
+																	   load_image("pics/load_game/mainmenu_b2.bmp", 0), 
+																	   load_image("pics/load_game/mainmenu_b3.bmp", 0), 
+																	   NULL, 
+																	   NULL, 'm', 0);
+
+	printf("%s\n", "2.43");
+	fflush(stdout);
+	load_game_w->kid = mainmenu_b;
+	button *temp = load_game_w->kid;
+	char filename_sr[] = "pics/load_game/game_A_b.bmp";
+	char filename_sr2[] = "pics/load_game/game_A_b2.bmp";
+	char filename_sr3[] = "pics/load_game/game_A_b3.bmp";
+	
+	for ( int i = 0; i < MEMORY_SLOTS; i++)
+	{
+		filename_sr[20] = 'A' + i;
+		filename_sr2[20] = 'A' + i;
+		filename_sr3[20] = 'A' + i;
+		printf("%s\n", filename_sr);
+		fflush(stdout);
+		jump_row = ( i%4 == 0 ) ? jump_row + 1 : jump_row; 
+		button *slot_b = build_button(x_start + (offset*(i%4)), y_start + (offset*jump_row), slot_size, slot_size, 
+																	   load_image(filename_sr, 0), 
+																	   load_image(filename_sr2, 0), 
+																	   load_image(filename_sr3, 0), 
+																	   NULL, 
+																	   NULL, 'A'+i, 0);
+		slots[i] = slot_b;
+		temp->next = slot_b;
+		temp = temp->next;
+	}
+	printf("%s\n", "2.44");
+	fflush(stdout);
+	for ( int i = 0; i < MEMORY_SLOTS; i++)
+	{
+		slots[i]->right = ((i+1 < MEMORY_SLOTS) && (slots[i+1]!=NULL) && ((i+1)%4 != 0)) ? slots[i+1] : NULL; 
+		slots[i]->left = ((i-1 >= 0) && (slots[i-1]!=NULL) && ((i-1)%4 != 3)) ? slots[i-1] : NULL;
+		slots[i]->up = ((i-4 >= 0) && (slots[i-4]!=NULL)) ? slots[i-4] : NULL;
+		slots[i]->down = ((i+4 < MEMORY_SLOTS) && (slots[i+4]!=NULL)) ? slots[i+4] : NULL;
+		if ( i >= MEMORY_SLOTS - number_of_buts_last_row  )
+		{
+			slots[i]->down = mainmenu_b;
+			if ( i%4 == 0 ) mainmenu_b->up = slots[i];
+		}
+	}
+	printf("%s\n", "2.45");
+	fflush(stdout);
+
+	temp = load_game_w->kid;
+	while( temp != NULL )
+	{
+		refresh_button(load_game_w, temp);
+		temp = temp->next;
+		
+	}
+	slots[MEMORY_SLOTS-1]->next = load_game_w->kid;
+	load_game_w->kid = load_game_w->kid->next;
+	mainmenu_b->next = NULL;
+	load_game_w->kid->highlight = 1;
+	refresh_button(load_game_w, load_game_w->kid);
+	return load_game_w;
+}
+//---------------------------------------------------------------------------------//
+	/* ----board methods----*/
+void init_gui_board(button *gui_board[BOARD_SIZE][BOARD_SIZE])
+{
+	
+	int row;
+	int column;
+	int cell_size = 60;
+	piece_empty = load_image("pics/board/piece_empty.bmp",1);
+	piece_white_p = load_image("pics/board/piece_white_p.bmp",1);
+	piece_white_b = load_image("pics/board/piece_white_b.bmp",1);
+	piece_white_n = load_image("pics/board/piece_white_n.bmp",1);
+	piece_white_r = load_image("pics/board/piece_white_r.bmp",1);
+	piece_white_q = load_image("pics/board/piece_white_q.bmp",1);
+	piece_white_k = load_image("pics/board/piece_white_k.bmp",1);
+	piece_black_p = load_image("pics/board/piece_black_p.bmp",1);
+	piece_black_b = load_image("pics/board/piece_black_b.bmp",1);
+	piece_black_n = load_image("pics/board/piece_black_n.bmp",1);
+	piece_black_r = load_image("pics/board/piece_black_r.bmp",1);
+	piece_black_q = load_image("pics/board/piece_black_q.bmp",1);
+	piece_black_k = load_image("pics/board/piece_black_k.bmp",1);
+	
+	for(row = 0; row < BOARD_SIZE; row++ )
+	{
+		for(column = 0; column < BOARD_SIZE; column++ )
+		{	
+			if ((column + row) % 2 == 1)
+			{
+				gui_board[column][row] = build_button(160 + cell_size*column,  10 + cell_size*(BOARD_SIZE-1-row), cell_size, cell_size,
+													 load_image("pics/board/white_sq_b.bmp",0),
+													 load_image("pics/board/white_sq_b2.bmp",0),
+													 load_image("pics/board/white_sq_b2.bmp",0),
+													 load_image("pics/board/white_sq_b3.bmp",0),
+													 load_image("pics/board/white_sq_b4.bmp",0),'w', 1);
+				gui_board[column][row]->row = row;
+				gui_board[column][row]->column = column;
+			}
+			else
+			{
+				gui_board[column][row] = build_button(160+ cell_size*column,  10 + cell_size*(BOARD_SIZE-1-row), cell_size, cell_size, 
+													 load_image("pics/board/black_sq_b.bmp",0),
+													 load_image("pics/board/black_sq_b2.bmp",0),
+													 load_image("pics/board/black_sq_b2.bmp",0),
+													 load_image("pics/board/black_sq_b3.bmp",0),
+													 load_image("pics/board/black_sq_b4.bmp",0),'b', 1);
+				gui_board[column][row]->row = row;
+				gui_board[column][row]->column = column;
+			}
+		}
+	}
+	for(row = 0; row < BOARD_SIZE; row++ ) // set cells arrows and next pointers 
+	{
+		for(column = 0; column < BOARD_SIZE; column++ )
+		{	
+			if (row != 0 ) gui_board[column][row]->down = gui_board[column][row-1];
+			if (column != 0 ) gui_board[column][row]->left = gui_board[column-1][row];
+			if (column != BOARD_SIZE-1 ) 
+			{
+					gui_board[column][row]->right = gui_board[column+1][row];
+					gui_board[column][row]->next = gui_board[column+1][row];
+					
+			}
+			else
+			{
+				if (row != 0 ) gui_board[column][row]->next = gui_board[0][row-1];
+			}
+			if (row != BOARD_SIZE-1 ) gui_board[column][row]->up = gui_board[column][row+1];
+		}
+	}
+}
+
+void load_board_to_screen(widget *panel , button *gui_board[BOARD_SIZE][BOARD_SIZE])
+{
+	int row;
+	int column;
+	for(row = 0; row < BOARD_SIZE; row++ )  
+	{
+		for(column = 0; column < BOARD_SIZE; column++ )
+		{
+			refresh_button(panel, gui_board[column][row]);
+			
+		}
+	}
+}
+
+SDL_Surface *get_piece_sr(char piece)
+{
+	switch(piece)
+	{
+		case (EMPTY):
+			return piece_empty;
+			break;
+		case (WHITE_P):
+			return piece_white_p;
+			break;
+		case (WHITE_B):
+			return piece_white_b;
+			break;
+		case (WHITE_N):
+			return piece_white_n;
+			break;
+		case (WHITE_R):
+			return piece_white_r;
+			break;
+		case (WHITE_Q):
+			return piece_white_q;
+			break;
+		case (WHITE_K):
+			return piece_white_k;
+			break;
+		case (BLACK_P):
+			return piece_black_p;
+			break;
+		case (BLACK_B):
+			return piece_black_b;
+			break;
+		case (BLACK_N):
+			return piece_black_n;
+			break;
+		case (BLACK_R):
+			return piece_black_r;
+			break;
+		case (BLACK_Q):
+			return piece_black_q;
+			break;
+		case (BLACK_K):
+			return piece_black_k;
+			break;
+	}
+	return NULL;
+}
+
+void toggle_gui_board_active(int on_off, int clean_selected, button *gui_board[BOARD_SIZE][BOARD_SIZE])
+{
+	int row;
+	int column;
+	if (gui_board_from[0] != -1)
+	{
+		if(clean_selected) gui_board[gui_board_from[0]][gui_board_from[1]]->special = 0;
+		if(clean_selected) refresh_button(window->child,gui_board[gui_board_from[0]][gui_board_from[1]]);
+		gui_board_from[0] = -1;
+		gui_board_from[1] = -1;
+	}
+	if (gui_board_to[0] != -1)
+	{
+		if(clean_selected) gui_board[gui_board_to[0]][gui_board_to[1]]->special = 0;
+		if(clean_selected)refresh_button(window->child,gui_board[gui_board_to[0]][gui_board_to[1]]);
+		gui_board_to[0] = -1;
+		gui_board_to[1] = -1;
+	}
+	for(row = 0; row < BOARD_SIZE; row++ )  
+	{
+		for(column = 0; column < BOARD_SIZE; column++ )
+		{
+			gui_board[column][row]->active = on_off;
+		}
+	}
+}
+
 //---------------------------------------------------------------------------------//
 		/* ----General methods---- */
 		
@@ -450,7 +940,7 @@ SDL_Surface *load_image( char *filename, int transper )
         if ( transper && (optimizedImage != NULL) )
 		{
 			//Map the color key
-			Uint32 colorkey = SDL_MapRGB(optimizedImage->format, 0, 0, 0);
+			Uint32 colorkey = SDL_MapRGB(optimizedImage->format, 0, 254, 0); // ???
 			SDL_SetColorKey(optimizedImage, SDL_SRCCOLORKEY, colorkey);
 
 		}
@@ -523,6 +1013,10 @@ void refresh_button(widget *panel, button *butt)
 	{
 		apply_surface(butt->rct.x, butt->rct.y, butt->sr, panel->sr);
 	}
+	if (butt->board_button)
+	{
+		apply_surface(butt->rct.x+10, butt->rct.y+12, get_piece_sr(board[butt->column][butt->row]),panel->sr);
+	}
 }
 
 void reset_panel(widget * panel)
@@ -531,7 +1025,7 @@ void reset_panel(widget * panel)
 	button *but = panel->kid;
 	switch(w_id)
 	{
-		case (1): //rest main menu
+		case (MAIN_W): //rest main menu
 			while(but != NULL)
 			{
 				but->active = 1;
@@ -542,7 +1036,7 @@ void reset_panel(widget * panel)
 				but = but->next;
 			}
 			break;
-		case (2): // reset settings
+		case (SETTINGS_W): // reset settings
 			while(but != NULL)
 				{
 					but->active = (but->name == 'w' || but->name == 'd' || but->name == 'p') ? 0 : 1;
@@ -560,14 +1054,31 @@ void reset_panel(widget * panel)
 					but = but->next;
 				}
 			break;
-		case (3): // reset set_diff
-			reset_panel(settings_w);
+		case (SET_DIFFICULTY_W): // reset set_diff_w
 			while(but != NULL)
 				{
 					but->active = (but->name == 'w' || but->name == '1') ? 0 : 1;
 					but->selected = 0;
 					but->highlight = 0;
 					but->special  = (but->name == 'w' ||  but->name == '1') ? 1: 0;
+					refresh_button(panel, but);
+					but = but->next;
+				}
+		case (CHANGE_BOARD_W): // reset change_board_w
+			while(but != NULL)
+				{
+					but->active = ( but->name == 'r' || but->name == 's' || but->name == 'm' || but->name == 'd' || but->name == 'z' ) ? 1:0;
+					but->selected = 0;
+					but->highlight = 0;
+					but->special  = 0;
+					refresh_button(panel, but);
+					but = but->next;
+				}
+			break;
+		case (LOAD_GAME_W): // reset change_board_w
+			while(but != NULL)
+				{
+					but->highlight = 0;
 					refresh_button(panel, but);
 					but = but->next;
 				}
@@ -583,10 +1094,6 @@ void reset_panel(widget * panel)
 
 void back_to_default(void) // we need to check if update is needed???
 {
-	reset_panel(main_w);
-	reset_panel(window->child);
-	window->child = main_w;
-	apply_surface(window->child->rct.x, window->child->rct.y, window->child->sr, window->sr);
 	init_board(board);
 	MINIMAX_DEPTH = 1;
 	GAME = 0;
@@ -602,8 +1109,16 @@ void back_to_default(void) // we need to check if update is needed???
 	BLACK_CL_ENABLE = 1;
 	CHECK_ON_WHITE = 0;
 	CHECK_ON_BLACK = 0;
+	
+	reset_panel(main_w);
+	reset_panel(settings_w);
+	reset_panel(set_diff_w);
+	reset_panel(change_board_w);
+	reset_panel(load_game_w);
+	window->child = main_w;
+	apply_surface(window->child->rct.x, window->child->rct.y, window->child->sr, window->sr);
+	
 }
-
 
 int activate_buttons_function(button *but)
 {
@@ -612,15 +1127,22 @@ int activate_buttons_function(button *but)
 	refresh_button(window->child, but);
 	switch (win_index)
 	{
-		case (1):
+		case (MAIN_W):
 			return activate_button_main_w(but);
 			break;
-		case (2):
+		case (SETTINGS_W):
 			activate_button_settings_w(but);
 			break;
-		case (3):
+		case (SET_DIFFICULTY_W):
 			activate_button_set_diff_w(but);
 			break;
+		case (CHANGE_BOARD_W):
+			activate_button_change_board_w(but);
+			break;
+		case (LOAD_GAME_W):
+			activate_button_load_game_w(but);
+			break;
+
 	}
 	return 0;
 }
@@ -636,7 +1158,7 @@ int activate_button_main_w(button *but)
 			window->child = settings_w; //new game button
 			break;
 		case ('l'): //load game button
-			//???
+			window->child = load_game_w;
 			break;
 	}
 	return 0;
@@ -704,6 +1226,11 @@ void activate_button_settings_w(button *but)
 			printf("%s\n","!!!!!!!!!!play!!!!!!!!!!!!!!!!!!");
 			break;
 		case ('s'): // ???
+			but->highlight = 0;
+			refresh_button(window->child, but);
+			window->child->kid->highlight = 1;
+			refresh_button(window->child, window->child->kid);
+			window->child = change_board_w;
 			print_board(board);
 			break;
 			
@@ -777,6 +1304,295 @@ void activate_button_set_diff_w(button *but)
 	}
 
 }
+
+void activate_button_change_board_w(button *but)
+{
+	button *tmp = change_board_w->kid;
+	if(but->board_button)
+	{
+		but->special = 1;
+		location l;
+		l.column = but->column;
+		l.row = but->row;
+		if (is_remove_cmd) remove_location(l); // need to remove from board 
+		if (is_set_cmd) // need to set selected_piece on board check if legal. 
+		{
+			char temp_piece = IS_WHITE(selected_piece) ? selected_piece : selected_piece + ('a'-'A'); 
+			if (is_legal_placement(l, selected_piece)) set_location(l, IS_WHITE(selected_piece), temp_piece);
+			else but->special = 0;
+		}
+		refresh_button(window->child, but);
+		while(tmp != NULL)
+		{
+			if(!tmp->board_button)
+			{
+				tmp->active = (tmp->name  == 'r' || tmp->name  == 'm' || tmp->name  == 's' || tmp->name  == 'd' || tmp->name  == 'z') ? 1:0 ; 
+				tmp->special = 0;
+				refresh_button(window->child, tmp);
+			}
+			tmp = tmp->next;
+		}
+		is_remove_cmd = 0; 
+		is_set_cmd = 0;
+		toggle_gui_board_active(0,0,gui_board_set);
+	}
+	else
+	{
+		switch(but->name)
+		{
+			case ('m'): // back to main menu
+				back_to_default();
+				break;
+			case ('d'): // done change the board back to settings if board is legal. 
+				while(tmp->next != NULL) 
+				{
+					if (tmp->special)
+					{
+						tmp->special = 0; 
+						refresh_button(change_board_w,tmp);
+					}
+					tmp = tmp->next;
+				}
+				if ( !check_settings() ) // if the game is a "game over" game we need to decide wtftd ??? 
+				{
+					apply_surface(tmp->rct.x, tmp->rct.y, tmp->sr5, change_board_w->sr);
+				}
+				else
+				{
+					apply_surface(tmp->rct.x, tmp->rct.y, tmp->sr, change_board_w->sr);
+					but->highlight = 0;
+					refresh_button(change_board_w,but);
+					change_board_w->kid->highlight = 1; 
+					refresh_button(change_board_w,change_board_w->kid);
+					window->child = settings_w;
+				}
+				break;
+			case('s'): // initialize set proccess
+				is_set_cmd = 1;
+
+				while(tmp != NULL) 
+				{
+					if (tmp->special)
+					{
+						tmp->special = 0; 
+						refresh_button(change_board_w,tmp);
+					}
+					tmp->active = ( (tmp->name >= '1' && tmp->name <= '6') || (tmp->name >= 'A' && tmp->name <= 'F') 
+										|| (tmp->name == 'm') ) ? 1 : 0;
+					if ( tmp->name == 'M' ) apply_surface(tmp->rct.x, tmp->rct.y, tmp->sr4, change_board_w->sr); //choose the appropriate message
+					tmp = tmp->next;
+				}
+				but->special = 1;
+				refresh_button(change_board_w, but);
+				break;
+			case('r'): // initialize remove proccess
+				is_remove_cmd = 1;
+
+				while(tmp != NULL) 
+				{
+					if (tmp->special)
+					{
+						tmp->special = 0; 
+						refresh_button(change_board_w,tmp);
+					}
+					tmp->active = ( (tmp->board_button) || (tmp->name == 'm') ) ? 1 : 0;
+					if ( tmp->name == 'M' ) apply_surface(tmp->rct.x, tmp->rct.y, tmp->sr3, change_board_w->sr); //choose the appropriate message
+					tmp = tmp->next;
+				}
+				but->special = 1;
+				refresh_button(change_board_w, but);
+				break;
+			case('z'): // clear the board
+				clear();
+				load_board_to_screen(change_board_w, gui_board_set);
+				while(tmp != NULL) 
+				{
+					if (tmp->special)
+					{
+						tmp->special = 0; 
+						refresh_button(change_board_w,tmp);
+					}
+					tmp->active = (tmp->name  == 'r' || tmp->name  == 'm' || tmp->name  == 's' || tmp->name  == 'd' || tmp->name  == 'z') ? 1:0 ; 
+					if ( tmp->name == 'M' ) apply_surface(tmp->rct.x, tmp->rct.y, tmp->sr, change_board_w->sr); //choose the appropriate message
+					tmp = tmp->next;
+				}
+				break;
+			case('1'):
+				selected_piece = BLACK_P;
+				break;
+			case('2'):
+				selected_piece = BLACK_B;
+				break;
+			case('3'):
+				selected_piece = BLACK_N;
+				break;
+			case('4'):
+				selected_piece = BLACK_R;
+				break;
+			case('5'):
+				selected_piece = BLACK_Q;
+				break;
+			case('6'):
+				selected_piece = BLACK_K;
+				break;
+			case('A'):
+				selected_piece = WHITE_P;
+				break;
+			case('B'):
+				selected_piece = WHITE_B;
+				break;
+			case('C'):
+				selected_piece = WHITE_N;
+				break;
+			case('D'):
+				selected_piece = WHITE_R;
+				break;
+			case('E'):
+				selected_piece = WHITE_Q;
+				break;
+			case('F'):
+				selected_piece = WHITE_K;
+				break;				
+		}
+		if ( (but->name >= '1' && but->name <= '6') || (but->name >= 'A' && but->name <= 'F') )
+		{
+			while(tmp != NULL) 
+			{
+				tmp->active = ( (tmp->board_button) || (tmp->name == 'm') ) ? 1 : 0;
+				if ( tmp->name == 'M' ) apply_surface(tmp->rct.x, tmp->rct.y, tmp->sr2, change_board_w->sr); //choose the appropriate message
+				tmp = tmp->next;
+			}
+			but->special = 1;
+			refresh_button(change_board_w, but);
+		}
+		
+	}
+	
+}
+void activate_button_load_game_w(button *but)
+{
+	switch (but->name)
+	{
+		case ('m'): 
+			back_to_default(); //main menu button
+			break;
+		case ('A'): // load this slot
+			load_xml("load_save/chess1.xml");
+			break;
+		case ('B'): // load this slot
+			load_xml("load_save/chess2.xml");
+			break;
+		case ('C'): // load this slot
+			load_xml("load_save/chess3.xml");
+			break;		
+		case ('D'): // load this slot
+			load_xml("load_save/chess4.xml");
+			break;		
+		case ('E'): // load this slot
+			load_xml("load_save/chess5.xml");
+			break;
+		case ('F'): // load this slot
+			load_xml("load_save/chess6.xml");
+			break;
+		case ('G'): // load this slot
+			load_xml("load_save/chess7.xml");
+			break;
+		case ('H'): // load this slot
+			load_xml("load_save/chess8.xml");
+			break;		
+		case ('I'): // load this slot
+			load_xml("load_save/chess9.xml");
+			break;		
+		case ('J'): // load this slot
+			load_xml("load_save/chess10.xml");
+			break;
+		case ('K'): // load this slot
+			load_xml("load_save/chess11.xml");
+			break;		
+		case ('L'): // load this slot
+			load_xml("load_save/chess12.xml");
+			break;
+	}
+	if ( but->name != 'm' )
+	{
+		button *temp = NULL;
+		load_board_to_screen(change_board_w, gui_board_set);
+		change_board_w->kid->highlight = 1;
+		refresh_button(change_board_w, change_board_w->kid);
+		temp = settings_w->kid;
+		while( temp != NULL )
+		{
+			switch(temp->name)
+			{
+				case('c'):
+					if ( !TWO_PLAYERS_MODE )
+					{
+						temp->special = 1;
+						temp->active = 0;
+						refresh_button(settings_w, temp);
+						temp->left->special = 0;
+						temp->left->active =1;
+						refresh_button(settings_w, temp->left);
+						temp->down->down->down->right->active = 0;
+						temp->down->down->down->right = temp->down->down->down->right->next;
+						refresh_button(settings_w, temp->down->down->down->right);
+						temp->down->down->down->right->active = 1;
+					}
+					break;
+				case('w'):
+					if ( !WHITE_TURN ) temp->special = 0;
+					refresh_button(settings_w, temp);
+					break;
+				case('b'):
+					if ( !WHITE_TURN ) temp->special = 1;
+					refresh_button(settings_w, temp);
+					break;
+			}
+			temp = temp->next;
+		}
+		temp = set_diff_w->kid;
+		while (temp != NULL )
+		{
+			switch(temp->name)
+			{
+				case ('b'): // player is black
+					if ( !PLAYER_WHITE )
+					{
+						PLAYER_WHITE = 0;
+						temp->special = 1;
+						temp->active = 0;
+						refresh_button(set_diff_w, temp);
+						temp->left->special = 0;
+						temp->left->active =1;
+						refresh_button(set_diff_w, temp->left);
+					}
+					break;
+				
+			}			
+			if ( (temp->name == '1' + MINIMAX_DEPTH - 1 ) || ((temp->name == '5') && (MINIMAX_DEPTH == -1) ) )
+			{
+				button *tmp = set_diff_w->kid;
+				while(tmp != NULL)
+				{
+					tmp->special = 0;
+					tmp->active =1;
+					refresh_button(set_diff_w, tmp);
+					tmp = tmp->right;
+				}
+				temp->special = 1;
+				temp->active = 0;
+				refresh_button(set_diff_w, temp);
+			}			
+			
+			temp = temp->next;
+		}
+		but->highlight = 0;
+		refresh_button(load_game_w, but);
+		load_game_w->kid->highlight = 1;
+		refresh_button(load_game_w, load_game_w->kid);
+		window->child = settings_w; //go to settings!
+	}
+}
 //---------------------------------------------------------------------------------//
 	/* ----Main function----*/
 	
@@ -788,12 +1604,23 @@ int play_gui(void) {
 	fflush(stdout);
 
 	SDL_Event event;
-	main_w = init_main();
-	settings_w = init_settings();
-	set_diff_w = init_set_diff();
+	init_gui_board(gui_board_set);
 	printf("%s\n", "2");
 	fflush(stdout);
-
+	init_gui_board(gui_board_game);
+	printf("%s\n", "2.1");
+	fflush(stdout);
+	main_w = init_main();
+	settings_w = init_settings();
+	printf("%s\n", "2.2");
+	fflush(stdout);
+	set_diff_w = init_set_diff();
+	printf("%s\n", "2.3");
+	fflush(stdout);
+	change_board_w = init_change_board();
+	printf("%s\n", "2.4");
+	fflush(stdout);
+	load_game_w = init_load_game();
 	window->child = main_w; 
 	int quit = 0;
 	

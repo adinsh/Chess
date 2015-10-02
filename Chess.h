@@ -57,14 +57,27 @@
 #define print_message(message) (printf("%s", message));
 
 
-struct location_st;
+struct location_st   //define a location 
+{
+  int column;	//0-7 (a-h)
+  int row;	//0-7 (1-8)
+  //struct location_st *next; //linked list implementation???
+};
 typedef struct location_st location;
-struct move_st;
+struct move_st   //define a move
+{
+  int what_eat; //???what have you eaten on the way
+  location *step; //will be a linked list of steps within this move	
+  struct move_st *next;	//linked list of moves
+};
 typedef struct move_st move;
 struct widget_st;
 typedef struct widget_st widget;
 struct button_st;
 typedef struct button_st button;
+
+
+
 
 // console functions
 void print_board( char board[BOARD_SIZE][BOARD_SIZE] );
@@ -113,6 +126,15 @@ int activate_buttons_function(button *but);
 int activate_button_main_w(button *but);
 void activate_button_settings_w(button *but);
 void activate_button_set_diff_w(button *but);
+void activate_button_change_board_w(button *but);
+void activate_button_load_game_w(button *but);
+SDL_Surface *get_piece_sr(char piece);
+void load_board_to_screen(widget *panel, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
+widget *init_change_board(void);
+widget *init_load_game(void);
+void toggle_gui_board_active(int on_off, int clean_selected, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
+
+
 
 void back_to_default(void);
 

@@ -27,19 +27,7 @@ extern int CHECK_ON_BLACK;
 
 //						*************** Infrastructure ***************
 
-struct location_st   //define a location 
-{
-  int column;	//0-7 (a-h)
-  int row;	//0-7 (1-8)
-  //struct location_st *next; //linked list implementation???
-};
 
-struct move_st   //define a move
-{
-  int what_eat; //???what have you eaten on the way
-  location *step; //will be a linked list of steps within this move	
-  struct move_st *next;	//linked list of moves
-};
 
 
 //						*************** Board init & print methods ****************

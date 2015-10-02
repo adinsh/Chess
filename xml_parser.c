@@ -70,7 +70,8 @@ int parse_line(char *line, int cnt)
 		word = strtok(NULL, " \t<>"); // word is either white or black or '/next_turn'
 		if ( strcmp(word, "/next_turn") == 0 ) return 1;
 		for ( int i = 0; word[i]; i++ ) word[i] = tolower(word[i]); // lower case the word
-		set_user_color(word);
+		if ( strcmp(word, "black") == 0 ) WHITE_TURN = 0;
+		if ( strcmp(word, "white") == 0 ) WHITE_TURN = 1;
 		return 1;
 	}
 	else if ( strcmp(word, "game_mode") == 0 )
@@ -97,6 +98,7 @@ int parse_line(char *line, int cnt)
 	{
 		word = strtok(NULL, " \t<>"); // word is either white or black or '/next_turn'
 		if ( strcmp(word, "/user_color") == 0 ) return 1;
+		for ( int i = 0; word[i]; i++ ) word[i] = tolower(word[i]); // lower case the word
 		set_user_color(word);
 		return 1;			
 	}
