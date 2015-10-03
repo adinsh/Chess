@@ -19,6 +19,9 @@
 #define BLACK_Q 'Q'
 #define BLACK_K 'K'
 
+#define WIN_SCORE 200
+#define LOOSE_SCORE -200
+#define TIE_SCORE -199
 
 #define EMPTY ' '
 
@@ -50,7 +53,10 @@
 #define NOT_YOUR_PIECE "The specified position does not contain your piece\n"
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
 #define ILLEGAL_MOVE "Illegal move\n"
- 
+
+#define DECLARE_TIE "The game ends in a tie\n"
+#define DECLARE_WINNER(x) (((x) == 1) ? "Mate! white player wins the game\n":"Mate! black player wins the game\n" )
+
 #define WRONG_ROOK_POSITION "Wrong position for a rook\n" 
 #define ILLEGAL_CALTLING_MOVE "Illegal castling move\n"  
 
@@ -121,6 +127,14 @@ move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from);
 move *link_moves(move *m1, move *m2);
 void do_move(char a_board[BOARD_SIZE][BOARD_SIZE], move *user_move);
 int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color);
+char piece_name_to_char(move *m, char *name);
+void print_all_moves(move *m);
+void print_move(move *m);
+int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player);
+
+
+
+
 
 
 

@@ -32,10 +32,12 @@ extern int CHECK_ON_BLACK;
   
 int load_xml(char *file_pth)
 {
+	char full_path[70] = "load_save/";
+	strcat(full_path, file_pth);
 	FILE *f_in;
 	char line[100];
 	int cnt = 0;
-	f_in = fopen(file_pth, "r");
+	f_in = fopen(full_path, "r");
 	
 	if ( f_in == NULL ) return 1; // file doesn't exists
 	

@@ -215,56 +215,54 @@ widget *init_main(void)
 
 widget *init_settings(void)
 {
-	int width_b_1 = 120;
-	int width_b_2 = 300;
-	int width_b_3 = 180;
-	int width_b_4 = 240;
-	int height_b = 48;
+	int width_b = 203;
+	int height_b = 54;
+	int start_x_main_b = 35;
 
 	widget *settings_w = build_panel(0, 0, WIN_W, WIN_H, "pics/settings/settings_w.bmp", 2);
 
-	button *set_white_b = build_button(42,305, width_b_1, height_b, load_image("pics/settings/set_white_b.bmp", 0),
+	button *set_white_b = build_button(136,305, width_b, height_b, load_image("pics/settings/set_white_b.bmp", 0),
 																	load_image("pics/settings/set_white_b2.bmp", 0), 
 																	load_image("pics/settings/set_white_b3.bmp", 0), 
 																	load_image("pics/settings/set_white_b4.bmp", 0), 
 																	load_image("pics/settings/set_white_b5.bmp", 0),'w', 0);
-	button *set_black_b = build_button(42+width_b_1+50,305, width_b_1, height_b, load_image("pics/settings/set_black_b.bmp", 0), 
+	button *set_black_b = build_button(461,305, width_b, height_b, load_image("pics/settings/set_black_b.bmp", 0), 
 																				 load_image("pics/settings/set_black_b2.bmp", 0), 
 																				 load_image("pics/settings/set_black_b3.bmp", 0), 
 																				 load_image("pics/settings/set_black_b4.bmp", 0), 
 																				 load_image("pics/settings/set_black_b5.bmp", 0), 'b', 0);
 	
-	button *set_playervsplayer_b = build_button(42,185, width_b_2, height_b, load_image("pics/settings/set_playervsplayer_b.bmp", 0),
+	button *set_playervsplayer_b = build_button(136,185, width_b, height_b, load_image("pics/settings/set_playervsplayer_b.bmp", 0),
 																			 load_image("pics/settings/set_playervsplayer_b2.bmp", 0), 
 																			 load_image("pics/settings/set_playervsplayer_b3.bmp", 0), 
 																			 load_image("pics/settings/set_playervsplayer_b4.bmp", 0), 
 																			 load_image("pics/settings/set_playervsplayer_b5.bmp", 0), 'p',0);
-	button *set_playervscomputer_b = build_button(42+width_b_2+50,185, width_b_2, height_b, load_image("pics/settings/set_playervscomputer_b.bmp", 0), 
+	button *set_playervscomputer_b = build_button(461,185, width_b, height_b, load_image("pics/settings/set_playervscomputer_b.bmp", 0), 
 																							load_image("pics/settings/set_playervscomputer_b2.bmp", 0), 
 																							load_image("pics/settings/set_playervscomputer_b3.bmp", 0), 
 																							load_image("pics/settings/set_playervscomputer_b4.bmp", 0), 
 																							load_image("pics/settings/set_playervscomputer_b5.bmp", 0), 'c', 0);
-	button *set_changeboard_b = build_button(250,425, width_b_2, height_b, load_image("pics/settings/set_changeboard_b.bmp", 0), 
+	button *set_changeboard_b = build_button(WIN_W/2 - width_b/2,425, width_b, height_b, load_image("pics/settings/set_changeboard_b.bmp", 0), 
 																		   load_image("pics/settings/set_changeboard_b2.bmp", 0), 
 																		   load_image("pics/settings/set_changeboard_b3.bmp", 0), 
 																		   NULL, 
 																		   NULL, 's', 0);
 	
-	button *set_mainmenu_b = build_button(35,545, width_b_3, height_b, load_image("pics/settings/set_mainmenu_b.bmp", 0), 
+	button *set_mainmenu_b = build_button(start_x_main_b,540, width_b, height_b, load_image("pics/settings/set_mainmenu_b.bmp", 0), 
 																	   load_image("pics/settings/set_mainmenu_b2.bmp", 0), 
 																	   load_image("pics/settings/set_mainmenu_b3.bmp", 0), 
 																	   NULL, 
 																	   NULL, 'm', 0);
-	button *set_play_b = build_button(525,545, width_b_4, height_b, load_image("pics/settings/set_play_b.bmp", 0), 
+	button *set_play_b = build_button(WIN_W-width_b-start_x_main_b,540, width_b, height_b, load_image("pics/settings/set_play_b.bmp", 0), 
 																	load_image("pics/settings/set_play_b2.bmp", 0), 
 																	load_image("pics/settings/set_play_b3.bmp", 0), 
 																	NULL, 
 																	NULL, 'g', 0);
-	button *set_setdificulty_b = build_button(525,545, width_b_4, height_b, load_image("pics/settings/set_setdifficulty_b.bmp", 0), 
+	button *set_setdificulty_b = build_button(WIN_W-width_b-start_x_main_b,540, width_b, height_b, load_image("pics/settings/set_setdifficulty_b.bmp", 0), 
 																			load_image("pics/settings/set_setdifficulty_b2.bmp", 0), 
 																			load_image("pics/settings/set_setdifficulty_b3.bmp", 0), 
 																			NULL, 
-																			NULL, 'd', 0);
+																			NULL, 'd', 0);//???need new button
 
 	//set buttons' next pointers
 	settings_w->kid =  set_playervsplayer_b;

@@ -13,7 +13,7 @@ extern int TWO_PLAYERS_MODE; // '1' - two players mode, '0' - player vs. AI mode
 extern int WHITE_TURN; // 0 - black, 1- white
 extern int PLAYER_WHITE; //???
 extern char board[BOARD_SIZE][BOARD_SIZE];
-
+extern int GAME_STATUS;
 
 // Game setiings
 extern int WHITE_CR_ENABLE; // ??? what to do in case the game is loaded?
@@ -443,7 +443,33 @@ int parse_input_game( char input[BUFF_SIZE] )
 		if ( save_xml(strtok(NULL, " ")) ) print_message(WRONG_FILE_NAME);
 		return 1; // repeat
 	}
-	else if ( strcmp(word, "move") == 0 ) // && !TWO_PLAYERS_MODE )
+	
+	else if ( strcmp(word, "get_moves") == 0 ) // 
+	{
+		word = strtok(NULL, " ");
+		location from  = str_to_location(word);
+		if (!is_legal_location(from))
+		{
+			print_message(WRONG_POSITION);
+			return 1; // repeat
+		}
+		else if ( (WHITE_TURN && !IS_WHITE(board[from.column][from.row])) || 
+				(!WHITE_TURN && !IS_BLACK(board[from.column][from.row])) )
+		{
+			print_message(NOT_YOUR_PIECE);
+			return 1; // repeat
+		}
+		move *m = get_piece_moves(board, &from);
+		print_all_moves(m); 
+		free_move(m);
+		return 1; // repeat
+	}
+	else if( strcmp(word, "print_score") == 0 ) // remove this command ??? 
+	{
+		printf("Board score is: %d\n", score_board(board, WHITE_TURN));
+		return 1; //repeat
+	}
+	else if ( strcmp(word, "move") == 0 ) // 
 	{
 		word = strtok(NULL, " ");
 		location from  = str_to_location(word);
@@ -462,6 +488,10 @@ int parse_input_game( char input[BUFF_SIZE] )
 			return 1; // repeat
 		}
 		move *m = create_move(from.row, from.column, to.row, to.column);
+		word = strtok(NULL, " ");
+		m->promote = piece_name_to_char(m, word); 
+		print_message("move:created move \n")
+		fflush(stdout);
 		if ( !is_legal_move(m) ) 
 		{
 			free_move(m); 
@@ -470,8 +500,10 @@ int parse_input_game( char input[BUFF_SIZE] )
 		}
 		else
 		{			
+			print_message("move: move is legal checked \n");
+			fflush(stdout);
 			do_move(board, m);
-			free_move(m);
+			free_move(m); 
 			print_board(board);
 		// check for tie / mate / check !! ???
 		}
@@ -479,6 +511,27 @@ int parse_input_game( char input[BUFF_SIZE] )
 	return 0; // change???
 }
 
+char piece_name_to_char(move *m, char *name)
+{
+	char piece = EMPTY;
+	int white_piece = IS_WHITE(board[m->from->column][m->from->row]);
+	if ( (board[m->from->column][m->from->row] != WHITE_P) && (board[m->from->column][m->from->row] != BLACK_P) ) return piece;
+	if ( name == NULL )
+	{
+		if ( (white_piece && m->to->row == BOARD_SIZE-1) || (!white_piece && m->to->row == 0) ) 
+		{
+			piece = white_piece ? WHITE_Q : BLACK_Q;
+			return piece;
+		}
+		else return piece;
+	}
+
+	if ( strcmp(name, "queen") == 0 ) piece = white_piece ? WHITE_Q : BLACK_Q;
+	else if ( strcmp(name, "rook") == 0 ) piece = white_piece ? WHITE_R : BLACK_R;
+	else if ( strcmp(name, "knight") == 0 ) piece = white_piece ? WHITE_N : BLACK_N;
+	else if ( strcmp(name, "bishop") == 0 ) piece = white_piece ? WHITE_B : BLACK_B;
+	return piece;
+}
 /** return '1' of m is a legal move,
   * '0' otherwise. */
 int is_legal_move(move* m)
@@ -487,7 +540,11 @@ int is_legal_move(move* m)
 	location *temp_loc1_to; // pointer for the user move
 	location *temp_loc2_from; //  pointer for the pattern moves
 	location *temp_loc2_to; // pointer for the user move
+	print_message("is_legal: getting moves  \n")
+	fflush(stdout);
 	move *moves = get_moves(board, WHITE_TURN); //get pattern moves (legal) ///???
+	print_message("is_legal: get_moves done  \n")
+	fflush(stdout);
 	move * temp_moves = moves;
 	while(temp_moves != NULL){ // check if one of the pattern moves is the same as the user move
 		temp_loc1_from = temp_moves->from;
@@ -499,19 +556,21 @@ int is_legal_move(move* m)
 			if ( temp_loc1_from->row == temp_loc2_from->row && temp_loc1_from->column == temp_loc2_from->column 
 				&& temp_loc1_to->column == temp_loc2_to->column && temp_loc1_to->column == temp_loc2_to->column )
 			{
-				free_move(moves);
+				free_move(moves); 
 				return 1;
 			}
 		}
 		temp_moves = temp_moves->next;
 	}
-	free_move(moves);
+	free_move(moves); 
 	return 0;
 }
 move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 {
 	move *all_moves = NULL;
 	location *loc = create_location(-1, -1);
+	print_message("get_moves: emty location create  \n");
+	fflush(stdout);
 	for ( int row = 0; row < BOARD_SIZE; row++ )
 	{
 		for ( int column = 0; column < BOARD_SIZE; column++ )
@@ -520,11 +579,15 @@ move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 			{
 				loc->row = row; 
 				loc->column = column;
+				printf("get_moves: start get_piece_moves row - %d, column - %d  \n",row,column);
+				fflush(stdout);
 				all_moves = link_moves(all_moves, get_piece_moves(a_board, loc));
+				printf("get_moves: done get_piece_moves row - %d, column - %d  \n",row,column);
+				fflush(stdout);
 			}
 		}
 	}
-	free_location(loc);
+	free_location(loc); 
 	return all_moves;
 }
 // location 'from' is not EMPTY
@@ -558,7 +621,8 @@ move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	
+	printf("get_p_moves: start  \n");
+	fflush(stdout);
 	move *res_moves = NULL;
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
 	char piece = a_board[from->column][from->row];
@@ -570,21 +634,28 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	opt_locs[1].column = from->column - 1;
 	opt_locs[2].row = from->row + direction;
 	opt_locs[2].column = from->column + 1;
+	printf("get_p_moves: creat all opt_locs  - \nopt_locs1 row:%d ,column:%d \nopt_locs2 row:%d ,column:%d \nopt_locs3 row:%d ,column:%d \n",opt_locs[0].row,opt_locs[0].column,opt_locs[1].row,opt_locs[1].column,opt_locs[2].row,opt_locs[2].column);
+	fflush(stdout);
 	move *opt_moves[12];
-	for (int i = 12 ; i<12 ; i++) opt_moves[i] = NULL;
-	for (int i = 3 ; i<3 ; i++)	
+	for (int i = 0 ; i<12 ; i++) opt_moves[i] = NULL;
+	for (int i = 0 ; i<3 ; i++)	
 	{
+		if (!i && is_legal_location(opt_locs[i]) &&  a_board[opt_locs[i].column][opt_locs[i].row] != EMPTY) continue;
+		if (i && is_legal_location(opt_locs[i]) &&  (IS_SAME_COLOR(piece,a_board[opt_locs[i].column][opt_locs[i].row]) || a_board[opt_locs[i].column][opt_locs[i].row] == EMPTY)) continue;
+		
 		if (is_legal_location(opt_locs[i]) && !IS_SAME_COLOR(piece,a_board[opt_locs[i].column][opt_locs[i].row])) 
 		{
-			if ( (IS_BLACK(piece) && opt_locs[i].row == 0 ) || (IS_WHITE(piece) && opt_locs[i].row == BOARD_SIZE-1) )
+			if ( (IS_BLACK(piece) && opt_locs[i].row == 0 ) || (IS_WHITE(piece) && opt_locs[i].row == BOARD_SIZE-1) ) // check if promotion is needed
 			{
+				printf("get_p_moves: need prom?? \n");
+				fflush(stdout);
 				opt_moves[4*i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
 				opt_moves[4*i]->promote = IS_WHITE(piece) ? WHITE_Q : BLACK_Q;
 				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
 				do_move(a_board_copy, opt_moves[4*i]);
 				if (is_check(a_board_copy, IS_WHITE(piece)))
 				{
-					free_move(opt_moves[4*i]);
+					free_move(opt_moves[4*i]); 
 					opt_moves[4*i] = NULL;
 				}
 				opt_moves[4*i+1 ] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
@@ -593,7 +664,7 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 				do_move(a_board_copy, opt_moves[4*i+1]);
 				if (is_check(a_board_copy, IS_WHITE(piece)))
 				{
-					free_move(opt_moves[4*i+1]);
+					free_move(opt_moves[4*i+1]); 
 					opt_moves[4*i+1] = NULL;
 				}
 				opt_moves[4*i+2 ] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
@@ -602,7 +673,7 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 				do_move(a_board_copy, opt_moves[4*i+2]);
 				if (is_check(a_board_copy, IS_WHITE(piece)))
 				{
-					free_move(opt_moves[4*i+2]);
+					free_move(opt_moves[4*i+2]); 
 					opt_moves[4*i+2] = NULL;
 				}
 				
@@ -612,18 +683,22 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 				do_move(a_board_copy, opt_moves[4*i+3]);
 				if (is_check(a_board_copy, IS_WHITE(piece)))
 				{
-					free_move(opt_moves[4*i+3]);
+					free_move(opt_moves[4*i+3]); 
 					opt_moves[4*i+3] = NULL;
 				}			
 			}				
 			else
 			{
+				printf("get_p_moves: start create_move to row : %d column: %d \n", opt_locs[i].row, opt_locs[i].column);
+				fflush(stdout);
 				opt_moves[i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
+				printf("get_p_moves: create_move to row : %d column: %d \n", opt_locs[i].row, opt_locs[i].column);
+				fflush(stdout);
 				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
 				do_move(a_board_copy, opt_moves[i]);
 				if (is_check(a_board_copy, IS_WHITE(piece)))
 				{
-					free_move(opt_moves[i]);
+					free_move(opt_moves[i]); 
 					opt_moves[i] = NULL;
 				}			
 			}				
@@ -631,21 +706,22 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	}
 	for (int i = 0 ; i<12 ; i++)
 	{
-		if (opt_moves[i] != NULL) 
+		if (opt_moves[i] == NULL) continue;
+		if (res_moves==NULL) res_moves = opt_moves[i];
+		else
 		{
-			if (res_moves==NULL) res_moves = opt_moves[i];
-			else
-			{
-				opt_moves[i]->next = res_moves;
-				res_moves = opt_moves[i];
-			}
+			opt_moves[i]->next = res_moves;
+			res_moves = opt_moves[i];
 		}
+
 	}
 	return res_moves;
 }
 
 move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
+	printf("get_b_moves: start  \n");
+	fflush(stdout);
 	move *res_moves = NULL;
 	char piece = a_board[from->column][from->row];
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
@@ -672,7 +748,7 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 					do_move(a_board_copy, opt_moves[cnt_moves]);
 					if (is_check(a_board_copy, IS_WHITE(piece)))
 					{
-						free_move(opt_moves[cnt_moves]);
+						free_move(opt_moves[cnt_moves]); 
 						opt_moves[cnt_moves] = NULL;
 						cnt_moves--;
 					}			
@@ -694,7 +770,7 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 					do_move(a_board_copy, opt_moves[cnt_moves]);
 					if (is_check(a_board_copy, IS_WHITE(piece)))
 					{
-						free_move(opt_moves[cnt_moves]);
+						free_move(opt_moves[cnt_moves]); 
 						opt_moves[cnt_moves] = NULL;
 						cnt_moves--;
 					}			
@@ -717,7 +793,7 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 					do_move(a_board_copy, opt_moves[cnt_moves]);
 					if (is_check(a_board_copy, IS_WHITE(piece)))
 					{
-						free_move(opt_moves[cnt_moves]);
+						free_move(opt_moves[cnt_moves]); 
 						opt_moves[cnt_moves] = NULL;
 						cnt_moves--;
 					}			
@@ -740,7 +816,7 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 					do_move(a_board_copy, opt_moves[cnt_moves]);
 					if (is_check(a_board_copy, IS_WHITE(piece)))
 					{
-						free_move(opt_moves[cnt_moves]);
+						free_move(opt_moves[cnt_moves]); 
 						opt_moves[cnt_moves] = NULL;
 						cnt_moves--;
 					}			
@@ -766,6 +842,8 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
+	printf("get_r_moves: start  \n");
+	fflush(stdout);
 	move *res_moves = NULL;
 	char piece = a_board[from->column][from->row];
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
@@ -792,7 +870,7 @@ move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 					do_move(a_board_copy, opt_moves[cnt_moves]);
 					if (is_check(a_board_copy, IS_WHITE(piece)))
 					{
-						free_move(opt_moves[cnt_moves]);
+						free_move(opt_moves[cnt_moves]); 
 						opt_moves[cnt_moves] = NULL;
 						cnt_moves--;
 					}			
@@ -886,10 +964,14 @@ move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_q_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
+	printf("get_q_moves: start  \n");
+	fflush(stdout);
 	return link_moves(get_b_moves(a_board, from), get_r_moves(a_board, from));
 }
 move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
+	printf("get_n_moves: start  \n");
+	fflush(stdout);
 	move *res_moves = NULL;
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
 	char piece = a_board[from->column][from->row];
@@ -912,6 +994,8 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	opt_locs[6].column = from->column + 1;
 	opt_locs[7].row = from->row - 2;	
 	opt_locs[7].column = from->column - 1;
+	printf("get_n_moves: creat all opt_locs  - \nopt_locs1 row:%d ,column:%d \nopt_locs2 row:%d ,column:%d \nopt_locs3 row:%d ,column:%d \n",opt_locs[0].row,opt_locs[0].column,opt_locs[1].row,opt_locs[1].column,opt_locs[2].row,opt_locs[2].column);
+	fflush(stdout);
 	
 	for (int i = 0; i < 8; i++ )
 	{
@@ -927,8 +1011,11 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 			}
 		}
 	}
+	printf("get_n_moves: moves created\n");
+	fflush(stdout);
 	for (int i = 0 ; i < 8 ; i++)
 	{
+		if (opt_moves[i] == NULL) continue;
 		if (res_moves==NULL) res_moves = opt_moves[i];
 		else
 		{
@@ -936,6 +1023,8 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 			res_moves = opt_moves[i];
 		}
 	}
+	printf("get_n_moves: done\n");
+	fflush(stdout);
 	return res_moves;
 }
 move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
@@ -979,6 +1068,7 @@ move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	}
 	for (int i = 0 ; i < 8 ; i++)
 	{
+		if (opt_moves[i] == NULL) continue;
 		if (res_moves==NULL) res_moves = opt_moves[i];
 		else
 		{
@@ -1011,10 +1101,126 @@ void do_move(char a_board[BOARD_SIZE][BOARD_SIZE], move *user_move)
 														user_move->promote : piece; //promote if needed (promote != EMPTY)
 }
 
+void print_move(move *m)
+{
+	printf("<%c,%d> to <%c,%d>",(m->from->column+'a'),(m->from->row+1),(m->to->column+'a'),(m->to->row+1));
+	int is_promotion = m->promote == EMPTY ? 0:1;
+	if (is_promotion) 
+	{
+		char norm_piecem = IS_WHITE(m->promote) ? m->promote : m->promote - ('a'-'A');
+		switch(norm_piecem)
+		{
+			case(WHITE_Q):
+				printf(" queen");
+				
+				break;
+			case(WHITE_B):
+				printf(" bishop");
+				break;
+			case(WHITE_R):
+				printf(" rook");
+				break;
+			case(WHITE_N):
+				printf(" knight");
+				break;
+		}
+	}
+	printf("\n");
+}
 
+void print_all_moves(move *m)
+{
+	while(m != NULL)
+	{
+		print_move(m);
+		m = m->next;
+	}
+}
+
+int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
+{
+	int black_score = 0;
+	int white_score = 0;
+	int white_can_move = 0;
+	int black_can_move = 0;
+	char current = EMPTY;
+	location loc;
+
+	for( int row = 0 ; row < BOARD_SIZE ; row++ )
+	{
+		for( int column = 0 ; column < BOARD_SIZE ; column++ )
+		{
+			//update current location and piece
+			current = a_board[column][row];
+			loc.row = row;
+			loc.column = column;
+			//update movability
+			printf("loc in score is; \trow:%d\tcolumn:%d\n", loc.row, loc.column);
+			fflush(stdout);
+			if ( !black_can_move && IS_BLACK(current) )
+					black_can_move = (get_piece_moves(a_board, &loc) != NULL) ? 1 : 0;
+			if ( !white_can_move && IS_WHITE(current) )
+					white_can_move = (get_piece_moves(a_board, &loc) != NULL) ? 1 : 0;
+			//update score
+			switch(current)
+			{
+				case (EMPTY):
+					break;
+				case (BLACK_P):
+					black_score++;
+					break;
+				case (BLACK_N):
+					black_score += 3; 
+					break;
+				case (BLACK_B):
+					black_score += 3; 
+					break;
+				case (BLACK_R):
+					black_score += 5; 
+					break;
+				case (BLACK_Q):
+					black_score += 9; 
+					break;
+				case (BLACK_K):
+					black_score += 400; 
+					break;
+				case (WHITE_P):
+					white_score++;
+					break;
+				case (WHITE_N):
+					white_score += 3; 
+					break;
+				case (WHITE_B):
+					white_score += 3; 
+					break;
+				case (WHITE_R):
+					white_score += 5; 
+					break;
+				case (WHITE_Q):
+					white_score += 9; 
+					break;
+				case (WHITE_K):
+					white_score += 400; 
+					break;
+			}
+		}
+	}
+	//check for tie
+	if ( white_player && !is_check(a_board, white_player) && !white_can_move ) return TIE_SCORE; 
+	if ( !white_player && !is_check(a_board, !white_player) && !black_can_move ) return TIE_SCORE; 
+	//check for mate
+	if ( white_player && is_check(a_board, white_player) && !white_can_move ) return LOOSE_SCORE; 
+	if ( !white_player && is_check(a_board, !white_player) && !black_can_move ) return LOOSE_SCORE; 
+	if ( white_player && is_check(a_board, !white_player) && !black_can_move ) return WIN_SCORE; 
+	if ( !white_player && is_check(a_board, white_player) && !white_can_move ) return WIN_SCORE; 
+
+	return white_player ? white_score - black_score : black_score - white_score;
+}
 //reterns 1 if the 'color' king is threatened else returns 0 ( color==0 -> black , color==1 -> white)
 int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 {
+	printf("is_check: start  \n");
+	fflush(stdout);
 	int kings_row;
 	int kings_column;
 	int direction = color ? 1:-1;
@@ -1233,20 +1439,35 @@ int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 			}
 		}
 	}
+	printf("is_check: done  \n");
+	fflush(stdout);
 	return 0; //all is good no check
 }
 
 int game_over(void)
 {
-	return 1;
+	int current_score = score_board(board, WHITE_TURN);
+	if ( current_score == TIE_SCORE ) return 1;
+	if ( current_score == WIN_SCORE ) return 2;
+	if ( current_score == LOOSE_SCORE ) return 3;
+	return 0;
 }
 
 void declare_winner(void)
 {
-	print_message("Yeah! You've won!!!\n")
+	if (GAME_STATUS == 1) print_message(DECLARE_TIE);
+	if (GAME_STATUS == 2) print_message(DECLARE_WINNER(WHITE_TURN));
+	if (GAME_STATUS == 3) print_message(DECLARE_WINNER(!WHITE_TURN));
+
 }
 
 void play_computer_turn(void)
 {
+	move *comuter_moves = get_moves(board,WHITE_TURN);
+	do_move(board,comuter_moves);
+	printf("Computer: move \n");
+	fflush(stdout);
+	print_move(comuter_moves);
+	free_move(comuter_moves);
 	
 }  
