@@ -33,7 +33,10 @@ extern int CHECK_ON_BLACK;
 int load_xml(char *file_pth)
 {
 	char full_path[70] = "load_save/";
-	strcat(full_path, file_pth);
+	char *s = strchr (file_pth, '/');
+	if (s == NULL) strcat(full_path, file_pth);
+	else strcpy(full_path, file_pth);
+	
 	FILE *f_in;
 	char line[100];
 	int cnt = 0;
@@ -160,7 +163,9 @@ void load_row(char *row_str, int row_num)
 int  save_xml(const char *file_name)
 {
 	char full_path[70] = "load_save/";
-	strcat(full_path, file_name);
+	char *s = strchr (file_name, '/');
+	if (s == NULL) strcat(full_path, file_name);
+	else strcpy(full_path, file_name);
 	FILE *f_out;
 	if ( (f_out = fopen(full_path, "w")) == NULL ) return 1;
 

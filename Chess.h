@@ -165,11 +165,15 @@ void activate_button_settings_w(button *but);
 void activate_button_set_diff_w(button *but);
 void activate_button_change_board_w(button *but);
 void activate_button_load_game_w(button *but);
+void activate_button_save_game_w(button *but);
 SDL_Surface *get_piece_sr(char piece);
 void load_board_to_screen(widget *panel, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
 widget *init_change_board(void);
 widget *init_load_game(void);
+widget *init_save_game(void);
 void toggle_gui_board_active(int on_off, int clean_selected, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
+void activate_button_play_game_w(button *but);
+
 
 
 

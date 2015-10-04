@@ -52,6 +52,12 @@ int main( int argc, char** argv )
 	{
 		if ( (SETTINGS) || (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) )  // ??? change conditions LLLLATERR
 		{
+			if ( GAME && (GAME_STATUS = game_over()) ) GAME = 0; // ??? 
+			if( !GAME && !SETTINGS ) // end the game
+			{  
+				declare_winner();
+				quit();
+			}
 			if ( GAME )	print_message(ENTER_MOVE(WHITE_TURN)); //???
 			if ( SETTINGS ) print_message(ENTER_SETTINGS);
 			read_input(input);
@@ -64,16 +70,12 @@ int main( int argc, char** argv )
 			DO_DEBUG(printf("user color is: %d\n", PLAYER_WHITE), 0);
 			DO_DEBUG(printf("minmax depth is: %d\n", MINIMAX_DEPTH), 0);
 			DO_DEBUG(printf("next player is: %d\n", WHITE_TURN), 0);
-			DO_DEBUG(printf("game mode is: %d\n", TWO_PLAYERS_MODE), 0);		
+			DO_DEBUG(printf("game mode is: %d\n", TWO_PLAYERS_MODE), 0);
+			
 		}
 		else if ( GAME )
 		{
-			if ( (GAME_STATUS = game_over()) ) GAME = 0; // ??? 
-			if( !GAME && !SETTINGS ) // end the game
-			{  
-				declare_winner();
-				quit();
-			}
+			
 			if ( (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) ) //user's turn 
 			{
 				if( (repeat = parse_input_game(input)) == 1 ) //'1' if user's input was wrong in some way or need another input 

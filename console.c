@@ -540,11 +540,11 @@ int is_legal_move(move* m)
 	location *temp_loc1_to; // pointer for the user move
 	location *temp_loc2_from; //  pointer for the pattern moves
 	location *temp_loc2_to; // pointer for the user move
-	print_message("is_legal: getting moves  \n")
-	fflush(stdout);
+	//print_message("is_legal: getting moves  \n")
+	//fflush(stdout);
 	move *moves = get_moves(board, WHITE_TURN); //get pattern moves (legal) ///???
-	print_message("is_legal: get_moves done  \n")
-	fflush(stdout);
+	//print_message("is_legal: get_moves done  \n")
+	//fflush(stdout);
 	move * temp_moves = moves;
 	while(temp_moves != NULL){ // check if one of the pattern moves is the same as the user move
 		temp_loc1_from = temp_moves->from;
@@ -553,9 +553,12 @@ int is_legal_move(move* m)
 		temp_loc2_to = m->to;
 		if ( temp_loc1_from != NULL  && temp_loc1_to != NULL && temp_loc2_from != NULL && temp_loc2_to != NULL ) 
 		{
-			if ( temp_loc1_from->row == temp_loc2_from->row && temp_loc1_from->column == temp_loc2_from->column 
-				&& temp_loc1_to->column == temp_loc2_to->column && temp_loc1_to->column == temp_loc2_to->column )
+			if ( (temp_loc1_from->row == temp_loc2_from->row )&& temp_loc1_from->column == temp_loc2_from->column 
+				&& temp_loc1_to->column == temp_loc2_to->column && temp_loc1_to->row == temp_loc2_to->row )
 			{
+				printf("good move!!!!!!!!!!!!??????????????????????????????????????");
+				print_move(temp_moves);
+				print_move(m);
 				free_move(moves); 
 				return 1;
 			}
@@ -594,7 +597,7 @@ move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	char nrm_piece = (IS_WHITE(a_board[from->column][from->row])) ? 
-					 a_board[from->column][from->row] : a_board[from->column][from->row] - ('a' - 'A');  //normalize to white
+					 a_board[from->column][from->row] : a_board[from->column][from->row] + ('a' - 'A');  //normalize to white
 	switch(nrm_piece)
 	{
 		case (WHITE_P):
@@ -718,9 +721,9 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return res_moves;
 }
 
-move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_b_moves: start  \n");
+	printf("get_r_moves: start  \n");
 	fflush(stdout);
 	move *res_moves = NULL;
 	char piece = a_board[from->column][from->row];
@@ -840,9 +843,9 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return res_moves;
 }
 
-move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
+move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_r_moves: start  \n");
+	printf("get_b_moves: start  \n");
 	fflush(stdout);
 	move *res_moves = NULL;
 	char piece = a_board[from->column][from->row];
@@ -1207,12 +1210,12 @@ int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 	}
 	//check for tie
 	if ( white_player && !is_check(a_board, white_player) && !white_can_move ) return TIE_SCORE; 
-	if ( !white_player && !is_check(a_board, !white_player) && !black_can_move ) return TIE_SCORE; 
+	if ( !white_player && !is_check(a_board, white_player) && !black_can_move ) return TIE_SCORE; 
 	//check for mate
 	if ( white_player && is_check(a_board, white_player) && !white_can_move ) return LOOSE_SCORE; 
-	if ( !white_player && is_check(a_board, !white_player) && !black_can_move ) return LOOSE_SCORE; 
+	if ( !white_player && is_check(a_board, white_player) && !black_can_move ) return LOOSE_SCORE; 
 	if ( white_player && is_check(a_board, !white_player) && !black_can_move ) return WIN_SCORE; 
-	if ( !white_player && is_check(a_board, white_player) && !white_can_move ) return WIN_SCORE; 
+	if ( !white_player && is_check(a_board, !white_player) && !white_can_move ) return WIN_SCORE; 
 
 	return white_player ? white_score - black_score : black_score - white_score;
 }
@@ -1464,10 +1467,10 @@ void declare_winner(void)
 void play_computer_turn(void)
 {
 	move *comuter_moves = get_moves(board,WHITE_TURN);
-	do_move(board,comuter_moves);
-	printf("Computer: move \n");
-	fflush(stdout);
-	print_move(comuter_moves);
+	do_move(board,comuter_moves);//???
+	//printf("Computer: move \n");
+	//fflush(stdout);
+	if (!GUI_MODE) print_move(comuter_moves);
 	free_move(comuter_moves);
 	
 }  
