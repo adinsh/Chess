@@ -2063,6 +2063,7 @@ void activate_button_play_game_w(button *but)
 				refresh_button(play_game_w, gui_board_game[real_move->from->column][real_move->from->row]);
 				gui_board_from[0] = -1;
 				gui_board_from[1] = -1;
+				
 				if ( (GAME_STATUS = game_over()) ) // check if the game is over after the move.
 				{
 					declare_winner_gui();
@@ -2086,6 +2087,26 @@ void activate_button_play_game_w(button *but)
 					}
 				}
 			}
+			else //selected an illegal location or another piece of the same color (need to restart special etc.)
+			{
+				location old_from;
+				old_from.column = gui_board_from[0];
+				old_from.row = gui_board_from[1];
+				gui_board_game[old_from.column][old_from.row]->special = 0;
+				refresh_button(play_game_w, gui_board_game[old_from.column][old_from.row]);
+				tmp_move = opt_move;
+				while(tmp_move != NULL ) 
+				{
+					gui_board_game[tmp_move->to->column][tmp_move->to->row]->special = 0;
+					refresh_button(play_game_w, gui_board_game[tmp_move->to->column][tmp_move->to->row]);
+					tmp_move = tmp_move->next;
+				}
+				gui_board_from[0] = -1;
+				gui_board_from[1] = -1;
+				activate_button_play_game_w(but); //return to first location of the move
+			}
+			free_move(opt_move);
+			free_move(real_move);
 		}
 	}
 	else
@@ -2175,6 +2196,18 @@ int play_gui(void) {
 	while (!quit) {
 		if ( window->child->id != w_id )
 		{
+			if ( window->child->id == PLAY_GAME_W )
+			{
+				if ( (GAME_STATUS = game_over()) ) declare_winner_gui();
+				else if (!TWO_PLAYERS_MODE && ((WHITE_TURN && !PLAYER_WHITE) || (!WHITE_TURN && PLAYER_WHITE))) // the computer turn
+				{
+					play_computer_turn();
+					toggle_gui_board_active(1, 0, gui_board_game);
+					if ( (GAME_STATUS = game_over()) ) declare_winner_gui(); // check if the game is over after the move.
+					else switch_turn_gui();// the game is not over, player turn.
+				}
+				
+			}
 			curr = window->child->kid;
 			w_id = window->child->id;
 		}

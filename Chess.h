@@ -33,7 +33,8 @@
 #define IS_KING(x) (((x) == (WHITE_K))||((x) == (BLACK_K)))
 
 
-#define BUFF_SIZE 52
+#define BUFF_SIZE 270
+#define BEST_DEPTH_VALUE 7
 
 #define DEBUG 1
 #define DO_DEBUG(x,y) (DEBUG == 1) ? (x) : (y)

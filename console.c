@@ -281,7 +281,7 @@ void parse_input_settings( char input[BUFF_SIZE] )
 	if ( strcmp(word, "difficulty") == 0 && !TWO_PLAYERS_MODE )
 	{
 		word = strtok(NULL, " "); //next word 
-		if ( strcmp(word, "best") == 0 ) MINIMAX_DEPTH = -1;
+		if ( strcmp(word, "best") == 0 ) MINIMAX_DEPTH = BEST_DEPTH_VALUE;
 		else if ( strcmp(word, "depth") == 0 )
 		{
 			word = strtok(NULL, " "); //next word 
