@@ -67,11 +67,13 @@ int main( int argc, char** argv )
 		if ( SETTINGS )
 		{
 			parse_input_settings(input);
-			DO_DEBUG(printf("user color is: %d\n", PLAYER_WHITE), 0);
-			DO_DEBUG(printf("minmax depth is: %d\n", MINIMAX_DEPTH), 0);
-			DO_DEBUG(printf("next player is: %d\n", WHITE_TURN), 0);
-			DO_DEBUG(printf("game mode is: %d\n", TWO_PLAYERS_MODE), 0);
-			
+			DO_DEBUG
+			(
+				printf("user color is: %d\n", PLAYER_WHITE);
+				printf("minmax depth is: %d\n", MINIMAX_DEPTH);
+				printf("next player is: %d\n", WHITE_TURN);
+				printf("game mode is: %d\n", TWO_PLAYERS_MODE);
+			)
 		}
 		else if ( GAME )
 		{

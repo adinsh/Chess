@@ -2063,15 +2063,13 @@ void activate_button_play_game_w(button *but)
 				refresh_button(play_game_w, gui_board_game[real_move->from->column][real_move->from->row]);
 				gui_board_from[0] = -1;
 				gui_board_from[1] = -1;
-				
+				switch_turn_gui();
 				if ( (GAME_STATUS = game_over()) ) // check if the game is over after the move.
 				{
 					declare_winner_gui();
 				}
 				else // the game is not over.
 				{
-					switch_turn_gui();
-				
 					if (!TWO_PLAYERS_MODE) // the computer turn
 					{
 						play_computer_turn();
@@ -2212,8 +2210,8 @@ int play_gui(void) {
 			w_id = window->child->id;
 		}
 		apply_surface(0, 0, window->child->sr, window->sr);
-		printf("%c\n", curr->name);
-		fflush(stdout);
+		//printf("%c\n", curr->name);
+		//fflush(stdout);
 		/* We finished drawing*/
 		if (SDL_Flip(window->sr) != 0) {
 			printf("ERROR: failed to flip buffer: %s\n", SDL_GetError());

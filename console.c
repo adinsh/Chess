@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 #include "Chess.h"
 
 // Genral settings
@@ -25,7 +26,145 @@ extern int CHECK_ON_WHITE;
 extern int CHECK_ON_BLACK;
 
 
-//						*************** Infrastructure ***************
+//						*************** minimax ***************
+/** returns an int representing the score for the previously
+  * executed move (that caused the a_board configuration),
+  * according to the scoring function and depending on the depth.
+  * this is a recursive function. */
+int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int maxi, int next_color, int depth)
+{	
+	int true_color =  (maxi) ? !next_color : next_color;
+	move *moves = NULL;
+	move *temp = NULL;
+	int mini_score = 201;
+	int maxi_score = -201;
+	// recursion ends
+	if (depth == MINIMAX_DEPTH)
+	{
+		return score_board(a_board, true_color);
+	}
+	moves = get_moves(a_board, next_color);	//get the moves of the other player
+	if ( moves == NULL ){
+		int current_score = score_board(a_board, next_color);
+		if (current_score == TIE_SCORE) return TIE_SCORE;
+		if(maxi){
+			return WIN_SCORE;
+		}
+		else{
+			return LOOSE_SCORE;
+		}
+	}
+	temp = moves;	//initialize temp
+	while ( temp != NULL ){
+		int temp_score;
+		char board_copy[BOARD_SIZE][BOARD_SIZE];
+		memcpy(board_copy, a_board, sizeof(board_copy));
+		do_move(board_copy, temp); // now the board copy is updated 
+		temp_score = minmax(board_copy, !maxi, !next_color, depth+1);
+		
+		if ( temp_score > maxi_score ){
+			maxi_score = temp_score;
+		}
+		if ( temp_score < mini_score ){
+			mini_score = temp_score;
+		}
+		temp = temp->next;
+	}
+	free_move(moves);
+	if ( !maxi ){
+		return maxi_score;
+	}
+	else{
+		return mini_score;
+	}
+}
+
+/** returns the max score move for the computer's turn.
+  * uses calls to minmax (recursive function). */
+move *get_move_minmax(void)
+{
+	move *moves = get_moves(board, WHITE_TURN); // our options.
+	move *max_move = NULL;
+	move *prev_max_move = NULL;
+	move *temp = moves;
+	int max_score = -201;
+	int current_score;
+	char board_copy[BOARD_SIZE][BOARD_SIZE];
+
+	while ( temp != NULL ){
+		
+		// copy the board
+		memcpy(board_copy, board, sizeof(board_copy));
+		
+		//do move 
+		do_move(board_copy, temp); // now the board copy is updated 
+
+		// get score for the move, using minmax
+		current_score = minmax(board_copy, 1 ,!WHITE_TURN , 1);
+		
+		// update max if necessary 
+		if ( current_score > max_score )
+		{
+			free_move(max_move);
+			max_move = create_move(temp->from->row, temp->from->column,temp->to->row, temp->to->column);
+			max_move->promote = temp->promote;
+			max_score = current_score;
+		}
+		if ( current_score == max_score )
+		{
+			prev_max_move = create_move(temp->from->row, temp->from->column,temp->to->row, temp->to->column);
+			prev_max_move->promote = temp->promote;
+			prev_max_move->next = max_move;
+			max_move = prev_max_move;
+		}
+		DO_DEBUG2
+		(
+			printf("check move :\n");
+			print_move(temp);
+			print_board(board_copy);
+			printf("current_score: %d\n",current_score );
+			printf("max_score: %d\n",max_score );
+			fflush(stdout);
+		)
+		temp = temp->next;
+	}
+	free_move(moves);
+
+	return max_move;
+}
+move *get_rand_move_minmax(void)
+{
+	time_t t;
+	srand((unsigned) time(&t));
+	int rand_pick = -1;
+	move *moves = get_move_minmax();
+	int cnt = 0;
+	move *prev_temp = NULL;
+	move *temp = moves;
+	while(temp != NULL)
+	{
+		cnt++;
+		temp = temp->next;
+	}
+	if (!cnt) return NULL;
+	rand_pick = rand()%cnt;// which move to pick. values from 1-cnt
+	temp = moves;
+	for(int i = 0; i < cnt; i++)
+	{
+		if (i == rand_pick)
+		{
+			if (prev_temp == NULL) prev_temp = temp->next;
+			else prev_temp->next = temp->next;
+			temp->next = NULL;
+			free_move(prev_temp);
+			return temp;
+		}
+		prev_temp = temp;
+		temp = temp->next;
+	}
+	return NULL;
+}
+
 
 
 
@@ -260,7 +399,6 @@ int check_settings( void )
 
 void read_input( char block[BUFF_SIZE] )
 {
-	if ( GUI_MODE ) printf("hello, my name is Cheesprog and I'm in GUI_MODE!\n");// ???
     fgets (block, BUFF_SIZE, stdin);
     if ( (strlen(block)>0) && (block[strlen(block) - 1] == '\n') )
         block[strlen (block) - 1] = '\0';
@@ -490,8 +628,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 		move *m = create_move(from.row, from.column, to.row, to.column);
 		word = strtok(NULL, " ");
 		m->promote = piece_name_to_char(m, word); 
-		print_message("move:created move \n")
-		fflush(stdout);
+		DO_DEBUG(print_message("move:created move \n");fflush(stdout);)
 		if ( !is_legal_move(m) ) 
 		{
 			free_move(m); 
@@ -500,8 +637,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 		}
 		else
 		{			
-			print_message("move: move is legal checked \n");
-			fflush(stdout);
+			DO_DEBUG(print_message("move: move is legal checked \n"); fflush(stdout);)			
 			do_move(board, m);
 			free_move(m); 
 			print_board(board);
@@ -556,9 +692,12 @@ int is_legal_move(move* m)
 			if ( (temp_loc1_from->row == temp_loc2_from->row )&& temp_loc1_from->column == temp_loc2_from->column 
 				&& temp_loc1_to->column == temp_loc2_to->column && temp_loc1_to->row == temp_loc2_to->row )
 			{
-				printf("good move!!!!!!!!!!!!??????????????????????????????????????");
+				DO_DEBUG
+				(
+				printf("good move!!!!!!!!!!!!??????????????????????????????????????"); 
 				print_move(temp_moves);
 				print_move(m);
+				)
 				free_move(moves); 
 				return 1;
 			}
@@ -572,8 +711,11 @@ move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 {
 	move *all_moves = NULL;
 	location *loc = create_location(-1, -1);
-	print_message("get_moves: emty location create  \n");
-	fflush(stdout);
+	DO_DEBUG
+	(
+		print_message("get_moves: emty location create  \n");
+		fflush(stdout);
+	)
 	for ( int row = 0; row < BOARD_SIZE; row++ )
 	{
 		for ( int column = 0; column < BOARD_SIZE; column++ )
@@ -582,11 +724,17 @@ move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 			{
 				loc->row = row; 
 				loc->column = column;
-				printf("get_moves: start get_piece_moves row - %d, column - %d  \n",row,column);
-				fflush(stdout);
+				DO_DEBUG
+				(
+					printf("get_moves: start get_piece_moves row - %d, column - %d  \n",row,column);
+					fflush(stdout);
+				)
 				all_moves = link_moves(all_moves, get_piece_moves(a_board, loc));
-				printf("get_moves: done get_piece_moves row - %d, column - %d  \n",row,column);
-				fflush(stdout);
+				DO_DEBUG
+				(
+					printf("get_moves: done get_piece_moves row - %d, column - %d  \n",row,column);
+					fflush(stdout);
+				)
 			}
 		}
 	}
@@ -624,8 +772,11 @@ move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_p_moves: start  \n");
-	fflush(stdout);
+	DO_DEBUG
+	(
+		printf("get_p_moves: start  \n");
+		fflush(stdout);
+	)
 	move *res_moves = NULL;
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
 	char piece = a_board[from->column][from->row];
@@ -637,8 +788,11 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	opt_locs[1].column = from->column - 1;
 	opt_locs[2].row = from->row + direction;
 	opt_locs[2].column = from->column + 1;
-	printf("get_p_moves: creat all opt_locs  - \nopt_locs1 row:%d ,column:%d \nopt_locs2 row:%d ,column:%d \nopt_locs3 row:%d ,column:%d \n",opt_locs[0].row,opt_locs[0].column,opt_locs[1].row,opt_locs[1].column,opt_locs[2].row,opt_locs[2].column);
-	fflush(stdout);
+	DO_DEBUG
+	(
+		printf("get_p_moves: creat all opt_locs  - \nopt_locs1 row:%d ,column:%d \nopt_locs2 row:%d ,column:%d \nopt_locs3 row:%d ,column:%d \n",opt_locs[0].row,opt_locs[0].column,opt_locs[1].row,opt_locs[1].column,opt_locs[2].row,opt_locs[2].column);
+		fflush(stdout);
+	)
 	move *opt_moves[12];
 	for (int i = 0 ; i<12 ; i++) opt_moves[i] = NULL;
 	for (int i = 0 ; i<3 ; i++)	
@@ -650,8 +804,11 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 		{
 			if ( (IS_BLACK(piece) && opt_locs[i].row == 0 ) || (IS_WHITE(piece) && opt_locs[i].row == BOARD_SIZE-1) ) // check if promotion is needed
 			{
-				printf("get_p_moves: need prom?? \n");
-				fflush(stdout);
+				DO_DEBUG
+				(
+					printf("get_p_moves: need prom?? \n");
+					fflush(stdout);
+				)
 				opt_moves[4*i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
 				opt_moves[4*i]->promote = IS_WHITE(piece) ? WHITE_Q : BLACK_Q;
 				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
@@ -692,11 +849,17 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 			}				
 			else
 			{
-				printf("get_p_moves: start create_move to row : %d column: %d \n", opt_locs[i].row, opt_locs[i].column);
-				fflush(stdout);
+				DO_DEBUG
+				(
+					printf("get_p_moves: start create_move to row : %d column: %d \n", opt_locs[i].row, opt_locs[i].column);
+					fflush(stdout);
+				)
 				opt_moves[i] = create_move(from->row, from->column, opt_locs[i].row, opt_locs[i].column);
-				printf("get_p_moves: create_move to row : %d column: %d \n", opt_locs[i].row, opt_locs[i].column);
-				fflush(stdout);
+				DO_DEBUG
+				(
+					printf("get_p_moves: create_move to row : %d column: %d \n", opt_locs[i].row, opt_locs[i].column);
+					fflush(stdout);
+				)
 				memcpy(a_board_copy, a_board, sizeof(a_board_copy)); //copy the board
 				do_move(a_board_copy, opt_moves[i]);
 				if (is_check(a_board_copy, IS_WHITE(piece)))
@@ -723,8 +886,11 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_r_moves: start  \n");
-	fflush(stdout);
+	DO_DEBUG
+	(
+		printf("get_r_moves: start  \n");
+		fflush(stdout);
+	)
 	move *res_moves = NULL;
 	char piece = a_board[from->column][from->row];
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
@@ -845,8 +1011,11 @@ move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_b_moves: start  \n");
-	fflush(stdout);
+	DO_DEBUG
+	(
+		printf("get_b_moves: start  \n");
+		fflush(stdout);
+	)
 	move *res_moves = NULL;
 	char piece = a_board[from->column][from->row];
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
@@ -967,14 +1136,12 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 
 move *get_q_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_q_moves: start  \n");
-	fflush(stdout);
+	PRINTD("get_q_moves: start  \n")
 	return link_moves(get_b_moves(a_board, from), get_r_moves(a_board, from));
 }
 move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
-	printf("get_n_moves: start  \n");
-	fflush(stdout);
+	PRINTD("get_n_moves: start  \n")
 	move *res_moves = NULL;
 	char a_board_copy[BOARD_SIZE][BOARD_SIZE];
 	char piece = a_board[from->column][from->row];
@@ -997,8 +1164,11 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	opt_locs[6].column = from->column + 1;
 	opt_locs[7].row = from->row - 2;	
 	opt_locs[7].column = from->column - 1;
-	printf("get_n_moves: creat all opt_locs  - \nopt_locs1 row:%d ,column:%d \nopt_locs2 row:%d ,column:%d \nopt_locs3 row:%d ,column:%d \n",opt_locs[0].row,opt_locs[0].column,opt_locs[1].row,opt_locs[1].column,opt_locs[2].row,opt_locs[2].column);
-	fflush(stdout);
+	DO_DEBUG
+	(
+		printf("get_n_moves: creat all opt_locs  - \nopt_locs1 row:%d ,column:%d \nopt_locs2 row:%d ,column:%d \nopt_locs3 row:%d ,column:%d \n",opt_locs[0].row,opt_locs[0].column,opt_locs[1].row,opt_locs[1].column,opt_locs[2].row,opt_locs[2].column);
+		fflush(stdout);
+	)
 	
 	for (int i = 0; i < 8; i++ )
 	{
@@ -1014,8 +1184,7 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 			}
 		}
 	}
-	printf("get_n_moves: moves created\n");
-	fflush(stdout);
+	PRINTD("get_n_moves: moves created\n")
 	for (int i = 0 ; i < 8 ; i++)
 	{
 		if (opt_moves[i] == NULL) continue;
@@ -1026,8 +1195,7 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 			res_moves = opt_moves[i];
 		}
 	}
-	printf("get_n_moves: done\n");
-	fflush(stdout);
+	PRINTD("get_n_moves: done\n")
 	return res_moves;
 }
 move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
@@ -1158,8 +1326,11 @@ int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 			loc.row = row;
 			loc.column = column;
 			//update movability
-			printf("loc in score is; \trow:%d\tcolumn:%d\n", loc.row, loc.column);
-			fflush(stdout);
+			DO_DEBUG
+			(
+				printf("loc in score is; \trow:%d\tcolumn:%d\n", loc.row, loc.column);
+				fflush(stdout);
+			)
 			if ( !black_can_move && IS_BLACK(current) )
 					black_can_move = (get_piece_moves(a_board, &loc) != NULL) ? 1 : 0;
 			if ( !white_can_move && IS_WHITE(current) )
@@ -1222,8 +1393,7 @@ int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 //reterns 1 if the 'color' king is threatened else returns 0 ( color==0 -> black , color==1 -> white)
 int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 {
-	printf("is_check: start  \n");
-	fflush(stdout);
+	PRINTD("is_check: start  \n")
 	int kings_row;
 	int kings_column;
 	int direction = color ? 1:-1;
@@ -1257,6 +1427,57 @@ int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_P ) || 
 		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_P ))) 
 		return 1;
+	
+	// checks if king is threatened by king 
+	enemy_loc.row =  kings_row + 1;
+	enemy_loc.column = kings_column;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row + 1;
+	enemy_loc.column = kings_column + 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row + 1;
+	enemy_loc.column = kings_column - 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 1;
+	enemy_loc.column = kings_column + 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 1;
+	enemy_loc.column = kings_column;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row - 1;
+	enemy_loc.column = kings_column - 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row;
+	enemy_loc.column = kings_column - 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	enemy_loc.row =  kings_row;
+	enemy_loc.column = kings_column + 1;
+	if (is_legal_location(enemy_loc) && 
+		((color && a_board[enemy_loc.column][enemy_loc.row] == BLACK_K ) || 
+		(!color && a_board[enemy_loc.column][enemy_loc.row] == WHITE_K ))) 
+		return 1;
+	
 	
 	// checks if king is threatened by Knight
 	enemy_loc.row =  kings_row + 2;
@@ -1442,8 +1663,7 @@ int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 			}
 		}
 	}
-	printf("is_check: done  \n");
-	fflush(stdout);
+	PRINTD("is_check: done  \n")
 	return 0; //all is good no check
 }
 
@@ -1466,7 +1686,7 @@ void declare_winner(void)
 
 void play_computer_turn(void)
 {
-	move *comuter_moves = get_moves(board,WHITE_TURN);
+	move *comuter_moves = get_rand_move_minmax();
 	do_move(board,comuter_moves);//???
 	//printf("Computer: move \n");
 	//fflush(stdout);

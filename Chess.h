@@ -36,9 +36,12 @@
 #define BUFF_SIZE 270
 #define BEST_DEPTH_VALUE 7
 
-#define DEBUG 1
-#define DO_DEBUG(x,y) (DEBUG == 1) ? (x) : (y)
-#define PRINTD(x) (DEBUG == 1) ? printf("%s\n", x) : NULL
+#define DEBUG 0
+#define DEBUG2 1
+#define DO_DEBUG(x) if(DEBUG){x}
+#define DO_DEBUG2(x) if(DEBUG2){x}
+
+#define PRINTD(x) if(DEBUG == 1) {printf("%s", x); fflush(stdout);}
 // board initialization
 #define ENTER_SETTINGS "Enter game settings:\n" 
 #define WRONG_GAME_MODE "Wrong game mode\n"
@@ -132,6 +135,10 @@ char piece_name_to_char(move *m, char *name);
 void print_all_moves(move *m);
 void print_move(move *m);
 int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player);
+int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int maxi, int next_color, int depth);
+move *get_move_minmax(void);
+move *get_rand_move_minmax(void);
+
 
 
 
