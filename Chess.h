@@ -22,7 +22,7 @@
 #define WIN_SCORE 200
 #define LOOSE_SCORE -200
 #define TIE_SCORE -199
-
+#define INF_SCORE 201 //naive infinity :)
 #define EMPTY ' '
 
 #define BOARD_SIZE 8
@@ -34,7 +34,7 @@
 
 
 #define BUFF_SIZE 270
-#define BEST_DEPTH_VALUE 7
+#define BEST_DEPTH_VALUE -1
 
 #define DEBUG 0
 #define DEBUG2 1
@@ -135,9 +135,11 @@ char piece_name_to_char(move *m, char *name);
 void print_all_moves(move *m);
 void print_move(move *m);
 int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player);
-int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int maxi, int next_color, int depth);
+int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int minim, int next_color, int depth, int alpha, int beta);
 move *get_move_minmax(void);
 move *get_rand_move_minmax(void);
+int get_best_minmax_depth(void);
+
 
 
 

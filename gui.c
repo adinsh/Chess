@@ -892,14 +892,14 @@ widget *init_play_game(void)
 	button *bestmove_black_b = build_button(661,420, width_b_3, height_b2, load_image("pics/play_game/bestmove_b.bmp", 0), 
 																	   load_image("pics/play_game/bestmove_b2.bmp", 0), 
 																	   load_image("pics/play_game/bestmove_b3.bmp", 0), 
-																	   NULL, 
-																	   NULL, 'B', 0);
+																	   load_image("pics/play_game/bestmove_b4.bmp", 0), 
+																	   load_image("pics/play_game/bestmove_b4.bmp", 0), 'B', 0);
 	// ??? set real place and size
 	button *bestmove_white_b = build_button(35,420, width_b_3, height_b2, load_image("pics/play_game/bestmove_b.bmp", 0), 
 																	   load_image("pics/play_game/bestmove_b2.bmp", 0), 
 																	   load_image("pics/play_game/bestmove_b3.bmp", 0), 
-																	   NULL, 
-																	   NULL, 'W', 0);
+																	   load_image("pics/play_game/bestmove_b4.bmp", 0), 
+																	   load_image("pics/play_game/bestmove_b4.bmp", 0), 'W', 0);
 	// ??? set real place and size																   
 	button *white_turn_b = build_button(35,100, width_b_2, height_b2, load_image("pics/play_game/turn_b.bmp", 0), 
 																	   NULL, 
@@ -1599,7 +1599,7 @@ void activate_button_set_diff_w(button *but)
 			MINIMAX_DEPTH = 4;
 			break;
 		case ('5'):
-			MINIMAX_DEPTH = -1;
+			MINIMAX_DEPTH = BEST_DEPTH_VALUE;
 			break;
 		case ('B'): //back to settings
 			but->highlight = 0;

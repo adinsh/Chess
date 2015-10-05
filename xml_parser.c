@@ -92,7 +92,7 @@ int parse_line(char *line, int cnt)
 		if ( strcmp(word, "/difficulty") == 0 ) return 1;
 		if ( strcmp(word, "best") == 0 )
 		{
-			MINIMAX_DEPTH = -1;
+			MINIMAX_DEPTH = BEST_DEPTH_VALUE;
 			return 1;
 		}
 		int x = atoi(word); // returns '0' if not valid
@@ -172,7 +172,7 @@ int  save_xml(const char *file_name)
 	char *next_turn = WHITE_TURN == 1 ? "White" : "Black";
 	char *game_mode = TWO_PLAYERS_MODE == 1 ? "1" : "2";
 	char min_depth[] = {MINIMAX_DEPTH + '0', '\0'}; //MINIMAX_DEPTH to string
-	char *difficulty = MINIMAX_DEPTH == -1 ? "best" : min_depth;
+	char *difficulty = MINIMAX_DEPTH == BEST_DEPTH_VALUE ? "best" : min_depth;
 	char *user_color = PLAYER_WHITE == 1 ? "White" : "Black";
 	char row_buff[9];
 	if ( TWO_PLAYERS_MODE == 1 )
