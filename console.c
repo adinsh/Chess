@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #include <time.h>
 #include "Chess.h"
 
@@ -12,16 +13,11 @@ extern int SETTINGS;
 extern int GUI_MODE; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
 extern int TWO_PLAYERS_MODE; // '1' - two players mode, '0' - player vs. AI mode
 extern int WHITE_TURN; // 0 - black, 1- white
-extern int PLAYER_WHITE; //???
+extern int PLAYER_WHITE;
 extern char board[BOARD_SIZE][BOARD_SIZE];
 extern int GAME_STATUS;
 
 // Game setiings
-extern int WHITE_CR_ENABLE; // ??? what to do in case the game is loaded?
-extern int BLACK_CR_ENABLE;
-extern int WHITE_CL_ENABLE;
-extern int BLACK_CL_ENABLE;
-
 extern int CHECK_ON_WHITE;
 extern int CHECK_ON_BLACK;
 int board_cnt = 0;
@@ -56,6 +52,7 @@ int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int minim, int next_color, int 
 		char board_copy[BOARD_SIZE][BOARD_SIZE];
 		memcpy(board_copy, a_board, sizeof(board_copy));
 		board_cnt++;
+		DO_DEBUG2(if (board_cnt%1000000 == 0) printf("%d millions of boards.\n", board_cnt/1000000); fflush(stdout);) 
 		do_move(board_copy, temp); // now the board copy is updated 
 		temp_score = minmax(board_copy, !minim, !next_color, depth+1, alpha, beta);
 		
@@ -85,6 +82,7 @@ int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int minim, int next_color, int 
   * uses calls to minmax (recursive function). */
 move *get_move_minmax(void)
 {
+	board_cnt = 0; // a board counter
 	int is_best = 0;
 	if (MINIMAX_DEPTH == BEST_DEPTH_VALUE)
 	{
@@ -141,6 +139,8 @@ move *get_move_minmax(void)
 	}
 	free_move(moves);
 	DO_DEBUG2(printf("minmax depth : %d \nnum of boards is : %d\n",MINIMAX_DEPTH,board_cnt); fflush(stdout);)
+	DO_DEBUG3(printf("minmax depth : %d \nnum of boards is : %d\n",MINIMAX_DEPTH,board_cnt); fflush(stdout);)
+
 	if (is_best == 1) MINIMAX_DEPTH = BEST_DEPTH_VALUE;
 	return max_move;
 }
@@ -183,6 +183,9 @@ int get_best_minmax_depth(void)
 	
 	int black_score = 0;
 	int white_score = 0;
+	int depth = 1;
+	int num_of_boards = 0;
+	int pawn_cnt = 0;
 	char current = EMPTY;
 	location loc;
 
@@ -195,6 +198,7 @@ int get_best_minmax_depth(void)
 			loc.row = row;
 			loc.column = column;
 			//update movability
+
 			DO_DEBUG
 			(
 				printf("loc in score is; \trow:%d\tcolumn:%d\n", loc.row, loc.column);
@@ -207,43 +211,53 @@ int get_best_minmax_depth(void)
 					break;
 				case (BLACK_P):
 					black_score++;
+					pawn_cnt++;
 					break;
 				case (BLACK_N):
-					black_score += 3; 
+					black_score += 8; 
+					break;
+				case (BLACK_K):
+					black_score += 8; 
 					break;
 				case (BLACK_B):
-					black_score += 3; 
+					black_score += 14; 
 					break;
 				case (BLACK_R):
-					black_score += 5; 
+					black_score += 14; 
 					break;
 				case (BLACK_Q):
-					black_score += 9; 
+					black_score += 28; 
 					break;
 				case (WHITE_P):
 					white_score++;
+					pawn_cnt++;
 					break;
 				case (WHITE_N):
-					white_score += 3; 
+					white_score += 8; 
+					break;
+				case (WHITE_K):
+					white_score += 8; 
 					break;
 				case (WHITE_B):
-					white_score += 3; 
+					white_score += 14; 
 					break;
 				case (WHITE_R):
-					white_score += 5; 
+					white_score += 14; 
 					break;
 				case (WHITE_Q):
-					white_score += 9; 
+					white_score += 28; 
 					break;
 				
 			}
 		}
 	}
+
 	int score = black_score + white_score;
-	if (score >= 50 ) return 3;
-	if (score >= 35 ) return 4;
-	if (score >= 20 ) return 5;
-	else return 6;
+	int prev_num = num_of_boards;
+	score += pawn_cnt ? 42 : 0; 
+	for ( ; num_of_boards < 1000000 ; prev_num = num_of_boards, num_of_boards +=  (int) pow((double) score, depth), depth++ );
+	DO_DEBUG3(printf("prev num of boards : %d , num_of_boards : %d , best_depth : %d\n",prev_num ,num_of_boards,depth);)
+	return MAX_DEPTH_VALUE < depth ? MAX_DEPTH_VALUE : depth;
 }
 
 
@@ -251,7 +265,7 @@ int get_best_minmax_depth(void)
 
 void print_line(){
 	int i;
-	printf("  |");
+	printf(" |");
 	for ( i = 1; i < BOARD_SIZE*4; i++ ){
 		printf("-");
 	}
@@ -264,7 +278,7 @@ void print_board( char board[BOARD_SIZE][BOARD_SIZE] )
 	print_line();
 	for (row = BOARD_SIZE-1; row >= 0 ; row--)
 	{
-		printf((row < 9 ? " %d" : "%d"), row+1);
+		printf((row < 9 ? "%d" : "%d"), row+1);
 		for ( column = 0; column < BOARD_SIZE; column++ )
 		{
 			printf("| %c ", board[column][row]);
@@ -272,7 +286,7 @@ void print_board( char board[BOARD_SIZE][BOARD_SIZE] )
 		printf("|\n");
 		print_line();
 	}
-	printf("   ");
+	printf("  ");
 	for ( column = 0; column < BOARD_SIZE; column++ )
 	{
 		printf(" %c  ", (char)('a' + column));
@@ -559,7 +573,7 @@ void parse_input_settings( char input[BUFF_SIZE] )
 	}
 	else if ( strcmp(word, "start") == 0 )
 	{
-		if ( check_settings() ) // if the game is a "game over" game we need to decide wtftd ??? 
+		if ( check_settings() ) 
 		{
 			start_game();
 		}
@@ -644,8 +658,7 @@ void set_location( location l, int white, char piece )
 
 
 /** returns '1' if current player is still playing (the turn hasn't passed).
-  * else returns'0' (turn will pass to the next player).  
-  * ????. */
+  * else returns'0' (turn will pass to the next player). */
 int parse_input_game( char input[BUFF_SIZE] )
 {
 	char words[BUFF_SIZE]; // will be a copy of the input.
@@ -686,7 +699,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 		word = strtok(NULL, " "); //next word 
 		if ( strcmp(word, "best") == 0 ) 
 		{
-			MINIMAX_DEPTH = BEST_DEPTH_VALUE; // change temporarily the MINIMAX_DEPTH 
+			MINIMAX_DEPTH = get_best_minmax_depth(); // change temporarily the MINIMAX_DEPTH 
 			move *best_moves = get_move_minmax();
 			print_all_moves(best_moves);
 			free_move(best_moves);
@@ -707,7 +720,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 		word = strtok(NULL, " "); //next word 
 		if ( strcmp(word, "best") == 0 ) 
 		{
-			MINIMAX_DEPTH = BEST_DEPTH_VALUE; // change temporarily the MINIMAX_DEPTH 
+			MINIMAX_DEPTH = get_best_minmax_depth(); // change temporarily the MINIMAX_DEPTH 
 		}
 		else 
 		{
@@ -756,17 +769,12 @@ int parse_input_game( char input[BUFF_SIZE] )
 			int move_score = minmax(board_copy, 1 ,!WHITE_TURN , 1, -INF_SCORE, INF_SCORE);
 			free_move(m);
 			if ( move_score == WIN_SCORE ) print_message("WIN score\n")
-			if ( move_score == TIE_SCORE ) print_message("TIE score\n")
-			if ( move_score == LOOSE_SCORE ) print_message("LOOSE score\n")
+			else if ( move_score == TIE_SCORE ) print_message("TIE score\n")
+			else if ( move_score == LOOSE_SCORE ) print_message("LOOSE score\n")
 			else printf("%d\n",move_score);
 			MINIMAX_DEPTH = real_minimax_depth; // return to the orginal MINIMAX_DEPTH
 		}
 		MINIMAX_DEPTH = real_minimax_depth; // return to the orginal MINIMAX_DEPTH
-	}
-	else if( strcmp(word, "print_score") == 0 ) // remove this command ??? 
-	{
-		printf("Board score is: %d\n", score_board(board, WHITE_TURN));
-		return 1; //repeat
 	}
 	else if ( strcmp(word, "move") == 0 ) // 
 	{
@@ -806,7 +814,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 		// check for tie / mate / check !! ???
 		}
 	}
-	return 1; // change???
+	return 1;
 }
 
 char piece_name_to_char(move *m, char *name)
@@ -838,11 +846,7 @@ int is_legal_move(move* m)
 	location *temp_loc1_to; // pointer for the user move
 	location *temp_loc2_from; //  pointer for the pattern moves
 	location *temp_loc2_to; // pointer for the user move
-	//print_message("is_legal: getting moves  \n")
-	//fflush(stdout);
-	move *moves = get_moves(board, WHITE_TURN); //get pattern moves (legal) ///???
-	//print_message("is_legal: get_moves done  \n")
-	//fflush(stdout);
+	move *moves = get_moves(board, WHITE_TURN); //get pattern moves (legal)
 	move * temp_moves = moves;
 	while(temp_moves != NULL){ // check if one of the pattern moves is the same as the user move
 		temp_loc1_from = temp_moves->from;
@@ -856,7 +860,7 @@ int is_legal_move(move* m)
 			{
 				DO_DEBUG
 				(
-				printf("good move!!!!!!!!!!!!??????????????????????????????????????"); 
+				printf("good move!"); 
 				print_move(temp_moves);
 				print_move(m);
 				)
@@ -1478,7 +1482,8 @@ int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 	int black_can_move = 0;
 	char current = EMPTY;
 	location loc;
-
+	move *tmp = NULL;
+	
 	for( int row = 0 ; row < BOARD_SIZE ; row++ )
 	{
 		for( int column = 0 ; column < BOARD_SIZE ; column++ )
@@ -1493,10 +1498,19 @@ int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 				printf("loc in score is; \trow:%d\tcolumn:%d\n", loc.row, loc.column);
 				fflush(stdout);
 			)
-			if ( !black_can_move && IS_BLACK(current) )
-					black_can_move = (get_piece_moves(a_board, &loc) != NULL) ? 1 : 0;
+			if ( !black_can_move && IS_BLACK(current) ) 
+			{
+					black_can_move = ((tmp = get_piece_moves(a_board, &loc)) != NULL) ? 1 : 0;
+					free_move(tmp);
+					tmp = NULL;
+			}
+				
 			if ( !white_can_move && IS_WHITE(current) )
-					white_can_move = (get_piece_moves(a_board, &loc) != NULL) ? 1 : 0;
+			{
+					white_can_move = ((tmp = get_piece_moves(a_board, &loc)) != NULL) ? 1 : 0;
+					free_move(tmp);
+					tmp = NULL;
+			}
 			//update score
 			switch(current)
 			{
@@ -1843,16 +1857,17 @@ void declare_winner(void)
 	if (GAME_STATUS == 1) print_message(DECLARE_TIE);
 	if (GAME_STATUS == 2) print_message(DECLARE_WINNER(WHITE_TURN));
 	if (GAME_STATUS == 3) print_message(DECLARE_WINNER(!WHITE_TURN));
-
 }
 
 void play_computer_turn(void)
 {
 	move *comuter_moves = get_rand_move_minmax();
-	do_move(board,comuter_moves);//???
-	//printf("Computer: move \n");
-	//fflush(stdout);
-	if (!GUI_MODE) print_move(comuter_moves);
+	do_move(board,comuter_moves);
+	if (!GUI_MODE)
+	{
+		printf("Computer: move ");
+		print_move(comuter_moves);
+		print_board(board);		
+	}
 	free_move(comuter_moves);
-	
 }  

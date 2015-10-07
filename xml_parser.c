@@ -11,16 +11,11 @@ extern int SETTINGS;
 extern int GUI_MODE; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
 extern int TWO_PLAYERS_MODE; // '1' - two players mode, '0' - player vs. AI mode
 extern int WHITE_TURN; // 0 - black, 1- white
-extern int PLAYER_WHITE; //???
+extern int PLAYER_WHITE;
 extern char board[BOARD_SIZE][BOARD_SIZE];
 
 
 // Game setiings
-extern int WHITE_CR_ENABLE; // ??? what to do in case the game is loaded?
-extern int BLACK_CR_ENABLE;
-extern int WHITE_CL_ENABLE;
-extern int BLACK_CL_ENABLE;
-
 extern int CHECK_ON_WHITE;
 extern int CHECK_ON_BLACK;
 
@@ -51,11 +46,11 @@ int load_xml(char *file_pth)
 		if ( !parse_line(line, cnt) ) break;
 		cnt++;
 	}
-	fclose(f_in);//???
+	fclose(f_in);
 	return 0;
 }
 
-/** 'file' is a relative\full path to a xml file. ???
+/** 'file' is a relative\full path to a xml file.
   * the funciton returns '1' if 'file' does not exists,
   * and '0' if no problem occured. the function loads the settings 
   * from 'file' and sets the relevant values. */  
@@ -195,36 +190,31 @@ int  save_xml(const char *file_name)
 	fputs(user_color, f_out); 
 	fputs("</user_color>\n", f_out);
 	fputs("\t<board>\n", f_out);
-	fputs("\t\t<row_8>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_8>", f_out); 
 	fputs(str_row(row_buff, 7), f_out);
 	fputs("</row_8>\n", f_out);
-	fputs("\t\t<row_7>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_7>", f_out);
 	fputs(str_row(row_buff, 6), f_out);
 	fputs("</row_7>\n", f_out);
-	fputs("\t\t<row_6>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_6>", f_out); 
 	fputs(str_row(row_buff, 5), f_out);
 	fputs("</row_6>\n", f_out);
-	fputs("\t\t<row_5>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_5>", f_out); 
 	fputs(str_row(row_buff, 4), f_out);
 	fputs("</row_5>\n", f_out);
-	fputs("\t\t<row_4>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_4>", f_out); 
 	fputs(str_row(row_buff, 3), f_out);
 	fputs("</row_4>\n", f_out);
-	fputs("\t\t<row_3>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_3>", f_out); 
 	fputs(str_row(row_buff, 2), f_out);
 	fputs("</row_3>\n", f_out);
-	fputs("\t\t<row_2>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_2>", f_out); 
 	fputs(str_row(row_buff, 1), f_out);
 	fputs("</row_2>\n", f_out);
-	fputs("\t\t<row_1>", f_out); //??? a function to get the board lines as  strings (line by line and replce EMPTY with "_")
+	fputs("\t\t<row_1>", f_out); 
 	fputs(str_row(row_buff, 0), f_out);
 	fputs("</row_1>\n", f_out);
 	fputs("\t</board>\n", f_out);
-	
-/* 	fputs("\t<general>", f_out); // in case we need another markup....
-	fputs(general, f_out); 
-	fputs("</general>\n", f_out);
- */
 	
 	fputs("</game>", f_out);
 	fclose(f_out);
@@ -241,23 +231,3 @@ char *str_row(char row_buff[9], int row)
 	return row_buff;
 }
 
-/* 
-
-		<?xml version="1.0" encoding="UTF-8"?>
-<game>
-	<next_turn>White</next_turn>
-	<game_mode>1</game_mode>
-	<difficulty></difficulty>
-	<user_color></user_color>
-	<board>
-		<row_8>________</row_8>
-		<row_7>Mq_r___M</row_7>
-		<row_6>____RMM_</row_6>
-		<row_5>__KM_M__</row_5>
-		<row_4>________</row_4>
-		<row_3>__m_B__m</row_3>
-		<row_2>__m__Qm_</row_2>
-		<row_1>___kr___</row_1>
-	</board>
-</game>
- */

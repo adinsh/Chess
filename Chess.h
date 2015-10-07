@@ -33,13 +33,16 @@
 #define IS_KING(x) (((x) == (WHITE_K))||((x) == (BLACK_K)))
 
 
-#define BUFF_SIZE 270
+#define BUFF_SIZE 52
 #define BEST_DEPTH_VALUE -1
+#define MAX_DEPTH_VALUE 8
 
 #define DEBUG 0
-#define DEBUG2 1
+#define DEBUG2 0
+#define DEBUG3 0
 #define DO_DEBUG(x) if(DEBUG){x}
 #define DO_DEBUG2(x) if(DEBUG2){x}
+#define DO_DEBUG3(x) if(DEBUG3){x}
 
 #define PRINTD(x) if(DEBUG == 1) {printf("%s", x); fflush(stdout);}
 // board initialization
@@ -53,13 +56,14 @@
 #define NO_PIECE "Setting this piece creates an invalid board\n"  
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
 
-#define ENTER_MOVE(x) (((x) == 1) ? "white player - enter your move:\n" : "black player - enter your move:\n")
+#define ENTER_MOVE(x) (((x) == 1) ? "White player - enter your move:\n" : "Black player - enter your move:\n")
 #define NOT_YOUR_PIECE "The specified position does not contain your piece\n"
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
 #define ILLEGAL_MOVE "Illegal move\n"
 
 #define DECLARE_TIE "The game ends in a tie\n"
-#define DECLARE_WINNER(x) (((x) == 1) ? "Mate! white player wins the game\n":"Mate! black player wins the game\n" )
+#define DECLARE_WINNER(x) (((x) == 1) ? "Mate! White player wins the game\n":"Mate! Black player wins the game\n" )
+#define CHECK "Check!\n"
 
 #define WRONG_ROOK_POSITION "Wrong position for a rook\n" 
 #define ILLEGAL_CALTLING_MOVE "Illegal castling move\n"  
@@ -74,7 +78,6 @@ struct location_st   //define a location
 {
   int column;	//0-7 (a-h)
   int row;	//0-7 (1-8)
-  //struct location_st *next; //linked list implementation???
 };
 typedef struct location_st location;
 struct move_st   //define a move
@@ -176,19 +179,25 @@ void activate_button_set_diff_w(button *but);
 void activate_button_change_board_w(button *but);
 void activate_button_load_game_w(button *but);
 void activate_button_save_game_w(button *but);
+void activate_button_promotion_w(button *but);
+void activate_button_play_game_w(button *but);
+void activate_button_choose_depth_w(button *but);
+void activate_button_declare_winner_w(button *but);
 SDL_Surface *get_piece_sr(char piece);
 void load_board_to_screen(widget *panel, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
 widget *init_change_board(void);
 widget *init_load_game(void);
 widget *init_save_game(void);
+widget *init_promotion(void);
+widget *init_choose_depth(void);
+widget *init_declare_winner(void);
 void toggle_gui_board_active(int on_off, int clean_selected, button *gui_board[BOARD_SIZE][BOARD_SIZE]);
-void activate_button_play_game_w(button *but);
-
-
-
-
-
+void switch_turn_gui(void);
+void declare_winner_gui(void);
 void back_to_default(void);
+void free_button(button *but);
+void free_widget(widget *panel);
+void free_gui(void);
 
 
 

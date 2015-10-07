@@ -12,35 +12,19 @@ int GAME_STATUS = 0; // '0' - ongoing game, '1' - tie, '2'-current player wins '
 int GUI_MODE = 0; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
 int TWO_PLAYERS_MODE = 1; // '1' - two players mode, '2'(0) - player vs. AI mode
 int WHITE_TURN = 1; // 0 - black, 1- white
-int PLAYER_WHITE = 1; //???
+int PLAYER_WHITE = 1;
 char board[BOARD_SIZE][BOARD_SIZE]; // the Board 
 
 // Game setiings
-int WHITE_CR_ENABLE = 1; // ??? what to do in case the game is loaded?
-int BLACK_CR_ENABLE = 1;
-int WHITE_CL_ENABLE = 1;
-int BLACK_CL_ENABLE = 1;
-
 int CHECK_ON_WHITE = 0;
 int CHECK_ON_BLACK = 0;
-
-
-
-
-void test1()
-{
-	char board[BOARD_SIZE][BOARD_SIZE];
-	init_board( board );
-	print_board( board );
-
-}
 
 
 /** the main function. */
 int main( int argc, char** argv )
 {
 	int repeat = 0;
-	char input[BUFF_SIZE] = "\n"; ///??? right initialization? 
+	char input[BUFF_SIZE] = "\n"; //initialize buffer
 	init_board(board);
 	if ( argc == 2 ) // more than 1 argument
 	{
@@ -50,15 +34,16 @@ int main( int argc, char** argv )
 
 	while( !GUI_MODE ) //play console mode
 	{
-		if ( (SETTINGS) || (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) )  // ??? change conditions LLLLATERR
+		if ( (SETTINGS) || (TWO_PLAYERS_MODE) || (WHITE_TURN&&PLAYER_WHITE) || ((!WHITE_TURN)&&(!PLAYER_WHITE)) )
 		{
-			if ( GAME && (GAME_STATUS = game_over()) ) GAME = 0; // ??? 
+			if ( GAME && (GAME_STATUS = game_over()) ) GAME = 0;
 			if( !GAME && !SETTINGS ) // end the game
 			{  
 				declare_winner();
 				quit();
 			}
-			if ( GAME )	print_message(ENTER_MOVE(WHITE_TURN)); //???
+			if( GAME && !repeat && is_check(board, WHITE_TURN)) print_message(CHECK)
+			if ( GAME )	print_message(ENTER_MOVE(WHITE_TURN));
 			if ( SETTINGS ) print_message(ENTER_SETTINGS);
 			read_input(input);
 			if( strcmp(input,"") == 0 ) continue; // verify input isn't empty.
@@ -86,9 +71,6 @@ int main( int argc, char** argv )
 			else play_computer_turn(); //computer's turn 
 
 			WHITE_TURN = (WHITE_TURN + 1)%2;
-			if( !repeat ) print_board(board);
-			
-			
 		}
 		
 	}
