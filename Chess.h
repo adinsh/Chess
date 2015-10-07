@@ -35,7 +35,7 @@
 
 #define BUFF_SIZE 52
 #define BEST_DEPTH_VALUE -1
-#define MAX_DEPTH_VALUE 8
+#define MAX_DEPTH_VALUE 10
 
 #define DEBUG 0
 #define DEBUG2 0
@@ -45,6 +45,7 @@
 #define DO_DEBUG3(x) if(DEBUG3){x}
 
 #define PRINTD(x) if(DEBUG == 1) {printf("%s", x); fflush(stdout);}
+
 // board initialization
 #define ENTER_SETTINGS "Enter game settings:\n" 
 #define WRONG_GAME_MODE "Wrong game mode\n"
@@ -55,7 +56,7 @@
 #define WRONG_POSITION "Invalid position on the board\n"
 #define NO_PIECE "Setting this piece creates an invalid board\n"  
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
-
+#define TOO_MUCH 3500000
 #define ENTER_MOVE(x) (((x) == 1) ? "White player - enter your move:\n" : "Black player - enter your move:\n")
 #define NOT_YOUR_PIECE "The specified position does not contain your piece\n"
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
@@ -73,6 +74,7 @@
 #define perror_message(func_name) (perror("Error: standard function %s has failed", func_name));
 #define print_message(message) (printf("%s", message));
 
+	//----infrastructure----//
 
 struct location_st   //define a location 
 {
@@ -96,7 +98,8 @@ typedef struct button_st button;
 
 
 
-// console functions
+	//----console functions----//
+	
 void print_board( char board[BOARD_SIZE][BOARD_SIZE] );
 void init_board( char board[BOARD_SIZE][BOARD_SIZE] );
 void print_line( void );
@@ -152,7 +155,8 @@ int get_best_minmax_depth(void);
 
 
 
-// XML functions
+	//----XML functions----//
+	
 int load_xml(char *file_pth);
 int parse_line(char *line, int cnt);
 void load_row(char *row_str, int row_num);
@@ -160,7 +164,8 @@ int  save_xml(const char *file_name);
 char *str_row(char row_buff[9], int row);
 
 
-//GUI functions
+	//----GUI functions----//
+	
 int play_gui(void);
 void quit_allocation_error(void);
 SDL_Surface *load_image( char *filename, int transper );
@@ -204,3 +209,4 @@ void free_gui(void);
 
 
 #endif
+

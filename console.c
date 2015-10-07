@@ -22,244 +22,6 @@ extern int CHECK_ON_WHITE;
 extern int CHECK_ON_BLACK;
 int board_cnt = 0;
 
-//						*************** minimax ***************
-/** returns an int representing the score for the previously
-  * executed move (that caused the a_board configuration),
-  * according to the scoring function and depending on the depth.
-  * this is a recursive function. */
-int minmax(char a_board[BOARD_SIZE][BOARD_SIZE], int minim, int next_color, int depth, int alpha, int beta)
-{	
-	int true_color =  (minim) ? !next_color : next_color;
-	move *moves = NULL;
-	move *temp = NULL;
-	int mini_score = INF_SCORE;
-	int maxi_score = -INF_SCORE;
-	// recursion ends
-	if (depth == MINIMAX_DEPTH)	return score_board(a_board, true_color);
-
-	moves = get_moves(a_board, next_color);	//get the moves of the other player
-	if ( moves == NULL )
-	{
-		int current_score = score_board(a_board, next_color);
-		if (current_score == TIE_SCORE) return TIE_SCORE;
-		if(minim) return WIN_SCORE;
-		else return LOOSE_SCORE;
-	}
-	temp = moves;	//initialize temp
-	while ( temp != NULL )
-	{
-		int temp_score;
-		char board_copy[BOARD_SIZE][BOARD_SIZE];
-		memcpy(board_copy, a_board, sizeof(board_copy));
-		board_cnt++;
-		DO_DEBUG2(if (board_cnt%1000000 == 0) printf("%d millions of boards.\n", board_cnt/1000000); fflush(stdout);) 
-		do_move(board_copy, temp); // now the board copy is updated 
-		temp_score = minmax(board_copy, !minim, !next_color, depth+1, alpha, beta);
-		
-		if ( temp_score > maxi_score )
-		{
-			maxi_score = temp_score;
-			if ( !minim ) alpha = maxi_score;
-		}
-		if ( temp_score < mini_score )
-		{
-			mini_score = temp_score;
-			if ( minim ) beta = mini_score;
-		}
-		if ( alpha > beta ) break;
-		temp = temp->next;
-	}
-	free_move(moves);
-	if ( minim ){
-		return mini_score;
-	}
-	else{
-		return maxi_score;
-	}
-}
-
-/** returns the max score move for the computer's turn.
-  * uses calls to minmax (recursive function). */
-move *get_move_minmax(void)
-{
-	board_cnt = 0; // a board counter
-	int is_best = 0;
-	if (MINIMAX_DEPTH == BEST_DEPTH_VALUE)
-	{
-		MINIMAX_DEPTH = get_best_minmax_depth();
-		is_best = 1;
-	}
-	move *moves = get_moves(board, WHITE_TURN); // our options.
-	move *max_move = NULL;
-	move *prev_max_move = NULL;
-	move *temp = moves;
-	int alpha = -INF_SCORE;
-	int beta = INF_SCORE;
-	int max_score = -INF_SCORE;
-	int current_score;
-	char board_copy[BOARD_SIZE][BOARD_SIZE];
-
-	while ( temp != NULL ){
-		
-		// copy the board
-		memcpy(board_copy, board, sizeof(board_copy));
-		board_cnt++;
-		//do move 
-		do_move(board_copy, temp); // now the board copy is updated 
-
-		// get score for the move, using minmax
-		current_score = minmax(board_copy, 1 ,!WHITE_TURN , 1, alpha, beta);
-		
-		// update max if necessary 
-		if ( current_score > max_score )
-		{
-			free_move(max_move);
-			max_move = create_move(temp->from->row, temp->from->column,temp->to->row, temp->to->column);
-			max_move->promote = temp->promote;
-			max_score = current_score;
-			alpha = max_score;
-		}
-		else if ( current_score == max_score )
-		{
-			prev_max_move = create_move(temp->from->row, temp->from->column,temp->to->row, temp->to->column);
-			prev_max_move->promote = temp->promote;
-			prev_max_move->next = max_move;
-			max_move = prev_max_move;
-		}
-		DO_DEBUG2
-		(
-			printf("check move :\n");
-			print_move(temp);
-			print_board(board_copy);
-			printf("current_score: %d\n",current_score );
-			printf("max_score: %d\n",max_score );
-			fflush(stdout);
-		)
-		temp = temp->next;
-	}
-	free_move(moves);
-	DO_DEBUG2(printf("minmax depth : %d \nnum of boards is : %d\n",MINIMAX_DEPTH,board_cnt); fflush(stdout);)
-	DO_DEBUG3(printf("minmax depth : %d \nnum of boards is : %d\n",MINIMAX_DEPTH,board_cnt); fflush(stdout);)
-
-	if (is_best == 1) MINIMAX_DEPTH = BEST_DEPTH_VALUE;
-	return max_move;
-}
-move *get_rand_move_minmax(void)
-{
-	time_t t;
-	srand((unsigned) time(&t));
-	int rand_pick = -1;
-	move *moves = get_move_minmax();
-	int cnt = 0;
-	move *prev_temp = NULL;
-	move *temp = moves;
-	while(temp != NULL)
-	{
-		cnt++;
-		temp = temp->next;
-	}
-	if (!cnt) return NULL;
-	rand_pick = rand()%cnt;// which move to pick. values from 1-cnt
-	temp = moves;
-	for(int i = 0; i < cnt; i++)
-	{
-		if (i == rand_pick)
-		{
-			if (prev_temp == NULL) prev_temp = temp->next;
-			else prev_temp->next = temp->next;
-			temp->next = NULL;
-			free_move(prev_temp);
-			return temp;
-		}
-		prev_temp = temp;
-		temp = temp->next;
-	}
-	return NULL;
-}
-
-
-int get_best_minmax_depth(void)
-{
-	
-	int black_score = 0;
-	int white_score = 0;
-	int depth = 1;
-	int num_of_boards = 0;
-	int pawn_cnt = 0;
-	char current = EMPTY;
-	location loc;
-
-	for( int row = 0 ; row < BOARD_SIZE ; row++ )
-	{
-		for( int column = 0 ; column < BOARD_SIZE ; column++ )
-		{
-			//update current location and piece
-			current = board[column][row];
-			loc.row = row;
-			loc.column = column;
-			//update movability
-
-			DO_DEBUG
-			(
-				printf("loc in score is; \trow:%d\tcolumn:%d\n", loc.row, loc.column);
-				fflush(stdout);
-			)
-			//update score
-			switch(current)
-			{
-				case (EMPTY):
-					break;
-				case (BLACK_P):
-					black_score++;
-					pawn_cnt++;
-					break;
-				case (BLACK_N):
-					black_score += 8; 
-					break;
-				case (BLACK_K):
-					black_score += 8; 
-					break;
-				case (BLACK_B):
-					black_score += 14; 
-					break;
-				case (BLACK_R):
-					black_score += 14; 
-					break;
-				case (BLACK_Q):
-					black_score += 28; 
-					break;
-				case (WHITE_P):
-					white_score++;
-					pawn_cnt++;
-					break;
-				case (WHITE_N):
-					white_score += 8; 
-					break;
-				case (WHITE_K):
-					white_score += 8; 
-					break;
-				case (WHITE_B):
-					white_score += 14; 
-					break;
-				case (WHITE_R):
-					white_score += 14; 
-					break;
-				case (WHITE_Q):
-					white_score += 28; 
-					break;
-				
-			}
-		}
-	}
-
-	int score = black_score + white_score;
-	int prev_num = num_of_boards;
-	score += pawn_cnt ? 42 : 0; 
-	for ( ; num_of_boards < 1000000 ; prev_num = num_of_boards, num_of_boards +=  (int) pow((double) score, depth), depth++ );
-	DO_DEBUG3(printf("prev num of boards : %d , num_of_boards : %d , best_depth : %d\n",prev_num ,num_of_boards,depth);)
-	return MAX_DEPTH_VALUE < depth ? MAX_DEPTH_VALUE : depth;
-}
-
 
 //						*************** Board init & print methods ****************
 
@@ -294,7 +56,8 @@ void print_board( char board[BOARD_SIZE][BOARD_SIZE] )
 	printf("\n");
 }
 
-
+/** initializes a full board chess board; placing the appropriate char (piece type&color)
+  * in the 'board' array. */
 void init_board( char board[BOARD_SIZE][BOARD_SIZE] )
 {
 	int column,row;
@@ -350,6 +113,8 @@ void init_board( char board[BOARD_SIZE][BOARD_SIZE] )
 
 //						*************** General methods ****************
 
+/** returns a pointer 'l' to a location constructed of 'row' and 'column'.
+  * this functions uses malloc (allocates memory dynamically). */
 location *create_location(int row, int column)
 {
 	location *l;
@@ -359,7 +124,8 @@ location *create_location(int row, int column)
 	return l;
 }
 
-/** create move. if row==(-1) will create empty move.*/
+/** returns a pointer 'm' to a move constructed of 'from_row', 'from_column', 'to_row' and 'to_column'.
+  * this functions uses malloc (allocates memory dynamically). */
 move *create_move(int from_row, int from_column, int to_row, int to_column)
 {
 	move *m;
@@ -396,6 +162,7 @@ void free_move(move *m)
 	}
 } 
 
+/**quits the program. */ 
 void quit( void )
 {
   exit(0);
@@ -413,7 +180,8 @@ int is_legal_location( location l )
 
 //						*************** Settings methods ****************
 
-// checks if 'piece' can be set at location 'l'. returns '1' if True, else '0'.
+/** checks if 'piece' can be set at location 'l'. 
+  * returns '1' if True, else '0'. */
 int is_legal_placement( location l, char piece )
 {
 	int count = 0;
@@ -459,7 +227,7 @@ int is_legal_placement( location l, char piece )
 	return 1;
 }
 
-// translates a 'word' to it's relevant char 'piece'
+/**  translates a 'word' to it's relevant char 'piece'. */
 char to_piece( char *word )
 {
 	if ( strcmp(word, "king") == 0 ) return WHITE_K;
@@ -489,6 +257,8 @@ int check_settings( void )
 
 //						*************** input methods ****************
 
+/** reads the input from user by placing a it char-by-char in 'block'.
+  * assumes that the input is less than BUFF_SIZE. */
 void read_input( char block[BUFF_SIZE] )
 {
     fgets (block, BUFF_SIZE, stdin);
@@ -601,20 +371,20 @@ location str_to_location( char* locus )
 
 //						*************** setters methods ***************
 
-// set the minimax_depth
+/** set the minimax_depth. */
 void set_minmax_depth( int x ) 
 { 
   if ( x > 0 && x < 5 ) MINIMAX_DEPTH = x; 
   else print_message(WRONG_MINIMAX_DEPTH); // x is illegal
 }
 
-// sets user color, default is white
+/** sets user color, default is white. */
 void set_user_color( char *s )
 {  
   if ( strcmp(s, "black")== 0 ) PLAYER_WHITE = 0;
 }
 
-// clears the board
+/** clears the board; all board cells are EMPTY. */
 void clear(void)
 { 
   for ( int i = 0; i < BOARD_SIZE; i++ )
@@ -626,13 +396,14 @@ void clear(void)
   }
 }
 
+/** changes game status; !SETTINGS and to GAME. */
 void start_game(void)
 {
 	SETTINGS = 0;
 	GAME = 1;
 }
 
-// sets EMPTY to location 'l'
+/** sets EMPTY to location 'l'. */
 void remove_location(location l)
 { 
 	if ( is_legal_location(l) ) board[l.column][l.row] = EMPTY;
@@ -717,6 +488,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 	else if( strcmp(word, "get_score") == 0 )  
 	{
 		int real_minimax_depth = MINIMAX_DEPTH; // save the orginal MINIMAX_DEPTH
+		
 		word = strtok(NULL, " "); //next word 
 		if ( strcmp(word, "best") == 0 ) 
 		{
@@ -766,6 +538,7 @@ int parse_input_game( char input[BUFF_SIZE] )
 			do_move(board_copy, m); // now the board copy is updated 
 
 			// get score for the move, using minmax
+			board_cnt = 0; // a board counter
 			int move_score = minmax(board_copy, 1 ,!WHITE_TURN , 1, -INF_SCORE, INF_SCORE);
 			free_move(m);
 			if ( move_score == WIN_SCORE ) print_message("WIN score\n")
@@ -815,8 +588,11 @@ int parse_input_game( char input[BUFF_SIZE] )
 		}
 	}
 	return 1;
+
 }
 
+/** returns char 'piece' which is the translation of 'name' to char.
+  *	the functions uses 'm' to decide if 'piece' should be black/white. */
 char piece_name_to_char(move *m, char *name)
 {
 	char piece = EMPTY;
@@ -873,6 +649,13 @@ int is_legal_move(move* m)
 	free_move(moves); 
 	return 0;
 }
+
+/** returns 'all_moves'; all the available moves for the requested player ('white_turn'),
+  *	in the given board ('a_board').
+  * the function goes through 'a_board' cell-by-cell, if the color of the current piece
+  * matches 'white turn', the function concatenates 'all_moves' and new moves for the current piece.
+  * if no moves are available, return NULL.
+  * uses method "create_location" & "get_piece_moves" (which use malloc).  */
 move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 {
 	move *all_moves = NULL;
@@ -907,7 +690,10 @@ move *get_moves(char a_board[BOARD_SIZE][BOARD_SIZE], int white_turn)
 	free_location(loc); 
 	return all_moves;
 }
-// location 'from' is not EMPTY
+
+/** returns moves available from location 'from' on board 'a_board'.
+  * the function mediates the call to the relevant "get X move" function (X being the type of piece).
+  * all the "get X move" allocated memory dynamically. */
 move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	char nrm_piece = (IS_WHITE(a_board[from->column][from->row])) ? 
@@ -936,6 +722,8 @@ move *get_piece_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return NULL;
 }
 
+/** returns move *'res_moves' which constitute all the available options for the pawn
+  * located in location 'from' on board 'a_board'.*/
 move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	DO_DEBUG
@@ -1050,6 +838,8 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return res_moves;
 }
 
+/** returns move *'res_moves' which constitute all the available options for the rook
+  * located in location 'from' on board 'a_board'. */
 move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	DO_DEBUG
@@ -1175,6 +965,8 @@ move *get_r_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return res_moves;
 }
 
+/** returns move *'res_moves' which constitute all the available options for the bishop
+  * located in location 'from' on board 'a_board'. */
 move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	DO_DEBUG
@@ -1300,11 +1092,17 @@ move *get_b_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return res_moves;
 }
 
+
+/** returns move *'res_moves' which constitute all the available options for the queen
+  * located in location 'from' on board 'a_board'. */
 move *get_q_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	PRINTD("get_q_moves: start  \n")
 	return link_moves(get_b_moves(a_board, from), get_r_moves(a_board, from));
 }
+
+/** returns move *'res_moves' which constitute all the available options for the knight
+  * located in location 'from' on board 'a_board'. */
 move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	PRINTD("get_n_moves: start  \n")
@@ -1364,6 +1162,9 @@ move *get_n_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	PRINTD("get_n_moves: done\n")
 	return res_moves;
 }
+
+/** returns move *'res_moves' which constitute all the available options for the king
+  * located in location 'from' on board 'a_board'. */
 move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 {
 	move *res_moves = NULL;
@@ -1416,6 +1217,9 @@ move *get_k_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 	return res_moves;
 	
 }
+
+/** return a move pointer which constitute the concatenated move of m1 & m2.
+  * if both m1 and m2 are NULL returns NULL. */
 move *link_moves(move *m1, move *m2)
 {
 	move *tmp;
@@ -1430,6 +1234,8 @@ move *link_moves(move *m1, move *m2)
 	return m1;
 }
 
+/** performs 'user_move' on 'a_board'.
+  * if promotion occurred updates 'a_board' accordingly. */
 void do_move(char a_board[BOARD_SIZE][BOARD_SIZE], move *user_move)
 {
 	char piece = a_board[user_move->from->column][user_move->from->row];
@@ -1438,6 +1244,8 @@ void do_move(char a_board[BOARD_SIZE][BOARD_SIZE], move *user_move)
 														user_move->promote : piece; //promote if needed (promote != EMPTY)
 }
 
+/** prints move 'm' in the requested format.
+  * if promotion prints the relevant promoted piece name. */
 void print_move(move *m)
 {
 	printf("<%c,%d> to <%c,%d>",(m->from->column+'a'),(m->from->row+1),(m->to->column+'a'),(m->to->row+1));
@@ -1465,6 +1273,8 @@ void print_move(move *m)
 	printf("\n");
 }
 
+/** prints all moves in 'm' by calling 
+  * "print_move" for each "->next" of 'm'. */
 void print_all_moves(move *m)
 {
 	while(m != NULL)
@@ -1474,6 +1284,8 @@ void print_all_moves(move *m)
 	}
 }
 
+/** returns the 'a_board' score according to the player ('white_player').
+  * (if necessary) returns WIN/LOOSE/TIE scores accordingly. */
 int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 {
 	int black_score = 0;
@@ -1566,7 +1378,9 @@ int score_board(char a_board[BOARD_SIZE][BOARD_SIZE], int white_player)
 
 	return white_player ? white_score - black_score : black_score - white_score;
 }
-//reterns 1 if the 'color' king is threatened else returns 0 ( color==0 -> black , color==1 -> white)
+
+/** returns 1 if 'color' (1: white, 0: black) 
+  * king is threatened, else returns 0. */
 int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 {
 	PRINTD("is_check: start  \n")
@@ -1843,6 +1657,8 @@ int is_check(char a_board[BOARD_SIZE][BOARD_SIZE], int color)
 	return 0; //all is good no check
 }
 
+/** returns an int which represent the game status 
+  * according to the board (uses "score_board()"). */
 int game_over(void)
 {
 	int current_score = score_board(board, WHITE_TURN);
@@ -1852,6 +1668,7 @@ int game_over(void)
 	return 0;
 }
 
+/** declares the winner (or tie) according to GAME_STATUS. */
 void declare_winner(void)
 {
 	if (GAME_STATUS == 1) print_message(DECLARE_TIE);
@@ -1859,6 +1676,9 @@ void declare_winner(void)
 	if (GAME_STATUS == 3) print_message(DECLARE_WINNER(!WHITE_TURN));
 }
 
+/** plays the computer's turn. 
+  * uses "get_rand_move_minmax()" (dynamically allocates memory) 
+  * and "do_move()". */
 void play_computer_turn(void)
 {
 	move *comuter_moves = get_rand_move_minmax();

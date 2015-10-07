@@ -143,6 +143,7 @@ widget *build_window(void)
 	window->id = 0;
 	window->child = NULL;
 	window->brother = NULL;	
+	window->kid = NULL;
 	return window;
 }
 
@@ -187,6 +188,7 @@ button *build_button(int x, int y, int size_w, int size_h, SDL_Surface *sr, SDL_
 widget *init_welcome(void)
 {
 	widget *welcome_w = build_panel(0, 0, WIN_W, WIN_H, "pics/welcome_w.bmp", -1);
+	welcome_w->kid = NULL;
 	return welcome_w;
 }
 widget *init_main(void)
@@ -1273,18 +1275,33 @@ void toggle_gui_board_active(int on_off, int clean_selected, button *gui_board[B
 /** frees all the gui's resources. */
 void free_gui(void)
 {
-	free_widget(welcome_to_chess_w); // id: -1
+	DO_DEBUG3(printf("in freeing\n"); fflush(stdout);)
 	free_widget(main_w); // id: 1
+	DO_DEBUG3(printf("in main_w\n"); fflush(stdout);)
+	free_widget(welcome_to_chess_w); // id: -1
+	DO_DEBUG3(printf("in welcome_to_chess_w\n"); fflush(stdout);)
+	
+	
 	free_widget(settings_w); // id: 2
+	DO_DEBUG3(printf("in settings_w\n"); fflush(stdout);)
 	free_widget(set_diff_w); // id: 3
+	DO_DEBUG3(printf("in set_diff_w\n"); fflush(stdout);)
 	free_widget(change_board_w); // id: 4
+	DO_DEBUG3(printf("in change_board_w\n"); fflush(stdout);)
 	free_widget(load_game_w); // id: 5
+	DO_DEBUG3(printf("in load_game_w\n"); fflush(stdout);)
 	free_widget(play_game_w); // id: 6
+	DO_DEBUG3(printf("in play_game_w\n"); fflush(stdout);)
 	free_widget(save_game_w); // id: 7
+	DO_DEBUG3(printf("in save_game_w\n"); fflush(stdout);)
 	free_widget(promotion_w); // id: 8
+	DO_DEBUG3(printf("in promotion_w\n"); fflush(stdout);)
 	free_widget(choose_depth_w); // id: 9
+	DO_DEBUG3(printf("in choose_depth_w\n"); fflush(stdout);)
 	free_widget(declare_winner_w); // id 10
+	DO_DEBUG3(printf("in declare_winner_w\n"); fflush(stdout);)
 	free_widget(window); // id: 0
+	DO_DEBUG3(printf("in window\n"); fflush(stdout);)
 	SDL_FreeSurface(icon_pic);
 	SDL_FreeSurface(piece_empty);
 	SDL_FreeSurface(piece_white_p);
@@ -1299,21 +1316,27 @@ void free_gui(void)
 	SDL_FreeSurface(piece_black_r);
 	SDL_FreeSurface(piece_black_q);
 	SDL_FreeSurface(piece_black_k);
+	DO_DEBUG3(printf("in freeing3\n"); fflush(stdout);)
+
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
-//	SDL_VideoQuit();
-	SDL_Quit();
+	DO_DEBUG3(printf("in freeing end\n"); fflush(stdout);)
 }
 void free_widget(widget *panel)
 {
+	DO_DEBUG3(printf("in free_widget\n"); fflush(stdout);)
 	if (panel != NULL)
 	{
+	DO_DEBUG3(printf("pre free_button\n"); fflush(stdout);)
 	free_button(panel->kid);
+	DO_DEBUG3(printf("done free_button\n"); fflush(stdout);)
 	SDL_FreeSurface(panel->sr);
 	free(panel);
 	}
 }
 void free_button(button *but)
 {
+	DO_DEBUG3(printf("in free_button\n"); fflush(stdout);)
+
 	if ( but != NULL )
 	{
 		free_button(but->next);
@@ -1854,18 +1877,22 @@ void activate_button_set_diff_w(button *but)
 			PLAYER_WHITE = 1;
 			but->special = 1;
 			but->active = 0;
+			but->highlight = 1;
 			refresh_button(window->child, but);
 			but->right->special = 0;
-			but->right->active =1;
+			but->right->active = 1;
+			but->right->highlight = 0;
 			refresh_button(window->child, but->right);
 			break;
 		case ('b'): // player is black
 			PLAYER_WHITE = 0;
 			but->special = 1;
 			but->active = 0;
+			but->highlight = 1;
 			refresh_button(window->child, but);
 			but->left->special = 0;
 			but->left->active =1;
+			but->left->highlight =0;
 			refresh_button(window->child, but->left);
 			break;
 		case ('1'):

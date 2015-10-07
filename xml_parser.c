@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include "Chess.h"
 
-// Genral settings
+	//----Genral settings----//
 extern int MINIMAX_DEPTH;
 extern int GAME;
 extern int SETTINGS;
@@ -15,7 +15,7 @@ extern int PLAYER_WHITE;
 extern char board[BOARD_SIZE][BOARD_SIZE];
 
 
-// Game setiings
+	//----Game settings----//
 extern int CHECK_ON_WHITE;
 extern int CHECK_ON_BLACK;
 
@@ -23,8 +23,6 @@ extern int CHECK_ON_BLACK;
   * the funciton returns '1' if 'file' does not exists,
   * and '0' if no problem occured. the function loads the settings 
   * from 'file' and sets the relevant values. */  
-
-  
 int load_xml(char *file_pth)
 {
 	char full_path[70] = "load_save/";
@@ -54,7 +52,6 @@ int load_xml(char *file_pth)
   * the funciton returns '1' if 'file' does not exists,
   * and '0' if no problem occured. the function loads the settings 
   * from 'file' and sets the relevant values. */  
-
 int parse_line(char *line, int cnt)
 {
 	char words[BUFF_SIZE]; // will be a copy of the input.
@@ -147,6 +144,7 @@ int parse_line(char *line, int cnt)
 	else return 2;
 }
 
+/** updates row 'row_num' in the board according to 'row_str'. */
 void load_row(char *row_str, int row_num)
 {
 	for ( int column = 0; column < BOARD_SIZE; column++ )
@@ -155,6 +153,8 @@ void load_row(char *row_str, int row_num)
 	}
 }
 
+/** saves the current game to specified 'file_name'
+  * returns 0 upon success, 1 otherwise. */
 int  save_xml(const char *file_name)
 {
 	char full_path[70] = "load_save/";
@@ -170,11 +170,13 @@ int  save_xml(const char *file_name)
 	char *difficulty = MINIMAX_DEPTH == BEST_DEPTH_VALUE ? "best" : min_depth;
 	char *user_color = PLAYER_WHITE == 1 ? "White" : "Black";
 	char row_buff[9];
+
 	if ( TWO_PLAYERS_MODE == 1 )
 	{
 		user_color = "";
 		difficulty = "";
 	}
+
 	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", f_out);
 	fputs("<game>\n", f_out);
 	fputs("\t<next_turn>", f_out);
@@ -221,6 +223,8 @@ int  save_xml(const char *file_name)
 	return 0;
 }
 
+/** translates row 'row' of the board to a "string".
+  * returns 'row_buff'. */
 char *str_row(char row_buff[9], int row)
 {
 	for ( int column = 0; column < BOARD_SIZE; column++ )

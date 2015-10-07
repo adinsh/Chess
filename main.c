@@ -4,18 +4,42 @@
 #include "Chess.h"
 
 
-// Genral settings
+	//----Genral settings----//
+
 int MINIMAX_DEPTH = 1;
 int GAME = 0;
 int SETTINGS = 1;
-int GAME_STATUS = 0; // '0' - ongoing game, '1' - tie, '2'-current player wins '3'-current pleyer loose.
-int GUI_MODE = 0; // '0' - application runs in 'Console mode', '1' - 'Gui mode'
-int TWO_PLAYERS_MODE = 1; // '1' - two players mode, '2'(0) - player vs. AI mode
-int WHITE_TURN = 1; // 0 - black, 1- white
-int PLAYER_WHITE = 1;
-char board[BOARD_SIZE][BOARD_SIZE]; // the Board 
 
-// Game setiings
+/** holds the current game state:
+  *	0 - game isn't over
+  * 1 - game is over with TIE
+  * 2 - game is over with WIN
+  * 3 - game is over with LOOSE */
+int GAME_STATUS = 0;
+
+/** 0 - application runs in 'Console mode'
+  * 1 - 'Gui mode'*/  
+int GUI_MODE = 0;
+
+/** 1 - two players mode 
+  * 2(0) - player vs. AI mode */
+int TWO_PLAYERS_MODE = 1;
+
+/** 0 - black 
+  * 1 - white */
+int WHITE_TURN = 1;
+
+/** 1 - player is white
+  * 0 - player is black */
+int PLAYER_WHITE = 1;
+
+/** the board */
+char board[BOARD_SIZE][BOARD_SIZE];
+
+	//----Game settings----//
+
+/** 0 - no check
+    1 - check on X player */
 int CHECK_ON_WHITE = 0;
 int CHECK_ON_BLACK = 0;
 
