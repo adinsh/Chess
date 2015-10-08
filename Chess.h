@@ -36,6 +36,9 @@
 #define BUFF_SIZE 52
 #define BEST_DEPTH_VALUE -1
 #define MAX_DEPTH_VALUE 10
+#define P_FIRST_MOVE 1
+#define DO_P_FIRST_MOVE(x) if(P_FIRST_MOVE){x}
+
 
 #define DEBUG 0
 #define DEBUG2 0
