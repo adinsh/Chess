@@ -835,6 +835,23 @@ move *get_p_moves(char a_board[BOARD_SIZE][BOARD_SIZE], location *from)
 		}
 
 	}
+	//add first move of pawn (if P_FIRST_MOVE == 1 in Chess.h) 
+	DO_P_FIRST_MOVE
+	(
+		if ( (IS_BLACK(piece) && from->row == BOARD_SIZE-2 ) || (IS_WHITE(piece) && from->row == 1) )
+		{
+			if ( a_board[from->column][from->row + (direction*2)] == EMPTY )
+			{
+				move *p_first_move = create_move(from->row, from->column, from->row + (direction*2), from->column );
+				if (res_moves==NULL) res_moves = p_first_move;
+				else
+				{
+					p_first_move->next = res_moves;
+					res_moves = p_first_move;
+				}
+			}
+		}
+	)
 	return res_moves;
 }
 
